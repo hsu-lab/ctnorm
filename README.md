@@ -1,5 +1,9 @@
 # CTNorm
 
+<div style="text-align: center;">
+  <img src="./assets/ctnorm.png" alt="Example Image" width="60%"/>
+</div>
+
 The repository contains usage instructions for CTNorm: a module that integrates a variety of image harmonization methods into a unified framework. Deep learning based models within CTNom has been trained on UCLA LDCT dataset.
 
 ## 🚀 Getting Started
@@ -56,7 +60,7 @@ docker run --shm-size=<memory_size> --gpus all -v /etc/localtime:/etc/localtime:
 
 * *<memory_size>*: Specify the shared memory size (e.g., `2g`, `4g`, `6g`).
 * *<path_to_input_data>*: Path to the input data directory, which will be mounted as ***/data*** in the container.
-* *<model_name>*: Model to use (e.g., `SNGAN`, `WGAN`, `SRResNet`, `RRDB`, `HM`, `BM3D`). Note: Case sensitive.
+* *<model_name>*: Model to use (e.g., `SNGAN`, `WGAN`, `SRResNet`, `RRDB`, `BM3D`). Note: Case sensitive.
 * *<input_file_type>*: File type of the test cases (e.g., `nii`, `nii.gz`, `dcm`).
 * *<gpu_id>*: GPU ID for running inference. If no GPU is available, this parameter can be omitted. If your machine does not have a GPU, also remove the ***--gpus all*** argument.
 
