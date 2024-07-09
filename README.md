@@ -1,8 +1,8 @@
 # CTNorm
 
-<div style="text-align: center;">
-  <img src="./assets/ctnorm.png" alt="Example Image" width="60%"/>
-</div>
+<p align="center">
+  <img src="./assets/ctnorm.png" alt="Example Image" width="70%"/>
+</p>
 
 The repository contains usage instructions for CTNorm: a module that integrates a variety of image harmonization methods into a unified framework. Deep learning based models within CTNom has been trained on UCLA LDCT dataset.
 
