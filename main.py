@@ -1,25 +1,47 @@
-from ctnorm import run_inference as ct_infer
-import argparse
+import yaml
 import sys
+import argparse
+from helpers import *
+import importlib
+import time
 
 
-if __name__ == '__main__':
-    # parse arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", help="Name of model to run...Must be one of [`BM3D`, `HM`, `SRResNet`, `RRDB`, `SNGAN`, `WGAN`]")
-    parser.add_argument("--gpu_id", help="GPU to run inference...Default is `cpu`", default='cpu')
-    parser.add_argument("--in_path", help="Path to input cases")
-    parser.add_argument("--in_type", help="Input file type...Must be one of [`nii`, 'nii.gz', `dcm`]")
-    parser.add_argument("--out_path", help="Path to save outout cases")
-    parser.add_argument("--out_type", help="File type of output cases", default='nii.gz')
-    parser.add_argument("--gt_path", help="Path to full dose if exists")
+# Load the config file
+def load_config(config_path):
+    """Load the configuration file."""
+    try:
+        with open(config_path, "r") as file:
+            config = yaml.safe_load(file)
+        return config
+    except Exception as e:
+        print(f"Error loading configuration file: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    # Parse CLI
+    parser = argparse.ArgumentParser(description="Run Toolkit Modules")
+    parser.add_argument('--opt', type=str, required=True, help="Path to the config file")
     args = parser.parse_args()
-    if not args.model or not args.in_path or not args.in_type or not args.out_path:
-        print("All required parameters are not set!\n\
-        --model must be specified --> [`BM3D`, `HM`, `SRResNet`, `RRDB`, `SNGAN`, `WGAN`]\n\
-        --in_path must be specified\n\
-        --in_type must be specified --> [`nii`, 'nii.gz', `dcm`]\n\
-        --out_path must be specified...Exiting")
-        sys.exit()
-    else:
-        ct_infer.execute(args.model, args.in_path, args.in_type, args.out_path, args.out_type, args.gpu_id, args.gt_path)
+
+    config = load_config(args.opt)
+    # Set up session
+    session_path = create_session_folder(config)
+    global_logger = setup_logger("base", session_path)
+    global_logger.info(f"Session output at: {session_path}")
+    # Run module
+    for module_name, should_run in config['Modules'].items():
+        if should_run:
+            global_logger.info(f"Running module: {module_name}")
+            # try:
+            start_time = time.time()
+            module_path = f"{module_name}.run_module"
+            module = importlib.import_module(module_path)
+            module.main(config, global_logger, session_path)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            global_logger.info(f"Completed module {module_name} in {elapsed_time:.2f} seconds")
+            # except ModuleNotFoundError:
+            #     global_logger.error(f"Module {module_name} not found!")
+            # except Exception as e:
+            #     global_logger.error(f"Error while running module {module_name}: {e}")
