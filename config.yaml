@@ -1,0 +1,42 @@
+Global:
+  session_base_path: "./SESSIONS"  # Base path where all session folders will be created
+
+Datasets:
+  UCLA:
+    input_path: "/data/data_st1.0_merged"
+    uids: "/data/uids/cv_uids/ucla_test_uids_fold_3_merged.txt"
+    type: "h5"
+    description: "UCLA LDCT Dataset"
+  NLST:
+    input_path: "path/to/nlst"
+    description: "National Lung Screening Trial dataset"
+  CustomDataset:
+    input_path: "path/to/custom"
+    description: "Custom dataset for validation"
+
+Modules:
+  Characterization: false
+  Harmonization: true
+  Robustness: false
+
+Characterization:
+  input_datasets:
+    - TCIA
+    - NLST
+  features_to_extract:
+    - texture
+    - shape
+  metrics:
+    - histogramMeasure
+    - meatdataMeasure
+
+Harmonization:
+  mode: "test"
+  input_datasets:
+    - UCLA
+  models:
+    SNGAN: "./pretrained_weights/SNGAN"
+    WGAN:  "./pretrained_weights/WGAN"
+  metrics:
+    - sobelMap
+    - tSNE
