@@ -1,0 +1,3 @@
+2025-01-12 18:23:07,410 - base - INFO - Session output at: ./SESSIONS/20250112-182307-7b
+2025-01-12 18:23:07,410 - base - INFO - Running module: Harmonization
+2025-01-12 18:23:07,411 - base - ERROR - Module Harmonization not found!

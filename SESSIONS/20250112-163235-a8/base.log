@@ -1,0 +1,3 @@
+2025-01-12 16:32:35,426 - base - INFO - Session output at: ./SESSIONS/20250112-163235-a8
+2025-01-12 16:32:35,427 - base - INFO - Running module: Harmonization
+2025-01-12 16:32:35,428 - base - ERROR - Error while running module Harmonization: 'UCLA'
