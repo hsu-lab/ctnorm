@@ -1,4 +1,0 @@
-2025-01-12 18:37:16,590 - base - INFO - Session output at: ./SESSIONS/20250112-183716-db
-2025-01-12 18:37:16,590 - base - INFO - Running module: Harmonization
-2025-01-12 18:37:17,202 - base - INFO - [Loader - UCLA LDCT Dataset] is created.
-2025-01-12 18:37:17,203 - base - INFO - Completed module Harmonization in 0.61 seconds

@@ -1,3 +1,0 @@
-2025-01-12 16:30:10,446 - base - INFO - Session output at: ./SESSIONS/20250112-163010-88
-2025-01-12 16:30:10,446 - base - INFO - Running module: Harmonization
-2025-01-12 16:30:10,448 - base - ERROR - Error while running module Harmonization: 'str' object has no attribute 'get'
