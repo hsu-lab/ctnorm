@@ -24,11 +24,12 @@ class Loader(data.Dataset):
     def __getitem__(self, index):
         uid = self.uids[index]
         in_dict = read_data(os.path.join(self.in_folder, uid+'.{}'.format(self.data_type)), self.data_type)
-        in_dict['data'] = self.ToTensor(in_dict['data'], min_HU_clip=0., max_HU_clip=1500., move_HU=0.)
+        in_dict['dataroot_LR'] = self.ToTensor(in_dict['data'], min_HU_clip=0., max_HU_clip=1500., move_HU=0.)
         if self.tar_folder:
             tar_data = read_data(os.path.join(self.tar_folder, uid+'.{}'.format(self.data_type)), self.data_type)
+        in_dict['uid'] = uid
         return in_dict
 
-        
+
     def __len__(self):
         return len(self.uids)

@@ -44,7 +44,6 @@ Converts incoming data input (uint16 - D,H,W) to torch tensor float in a given r
 """
 class ImgToTensor(object):
     def __call__(self, img, min_HU_clip=-1000., max_HU_clip=500., move_HU=1000.):
-        img = np.expand_dims(img, axis=0)
         img = np.clip(img.astype(np.float32), min_HU_clip, max_HU_clip)
         img += move_HU
         img = torch.from_numpy(img)

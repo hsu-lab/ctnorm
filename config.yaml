@@ -35,8 +35,14 @@ Harmonization:
   input_datasets:
     - UCLA
   models:
-    SNGAN: "./pretrained_weights/SNGAN"
-    WGAN:  "./pretrained_weights/WGAN"
+    SNGAN: "./Harmonization/pretrained_weights/SNGAN/latest_G.pth"
+    WGAN:  "./Harmonization/pretrained_weights/WGAN/latest_G.pth"
+  param:
+    tile_xy: 512
+    tile_z: 32
+    z_overlap: 4
+    gpu_id: 2
+    scale: 1.0
   metrics:
     - sobelMap
     - tSNE

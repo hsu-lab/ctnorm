@@ -1,4 +1,5 @@
 __pycache__/
 SESSIONS/
+write_config.py
 *.sh
 *.pth

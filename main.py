@@ -23,12 +23,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run Toolkit Modules")
     parser.add_argument('--opt', type=str, required=True, help="Path to the config file")
     args = parser.parse_args()
-
     config = load_config(args.opt)
-    # Set up session
+
+    # Set up session folders
     session_path = create_session_folder(config)
     global_logger = setup_logger("base", session_path)
     global_logger.info(f"Session output at: {session_path}")
+    
     # Run module
     for module_name, should_run in config['Modules'].items():
         if should_run:
