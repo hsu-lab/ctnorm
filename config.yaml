@@ -43,6 +43,6 @@ Harmonization:
     z_overlap: 4
     gpu_id: 2
     scale: 1.0
-  metrics:
+  Metrics:
     - sobelMap
     - tSNE

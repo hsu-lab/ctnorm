@@ -121,25 +121,15 @@ class SRGANModel(BaseModel):
     def get_current_log(self):
         return self.log_dict
 
-    def get_current_visuals(self, data, maskOn=True, need_HR=True):
-        # print('is maskOn:', maskOn) # False during validation / True during training
-        # print('need_HR:', need_HR) # True during validation and training
+
+    def get_current_visuals(self, data, need_HR=True):
         out_dict = OrderedDict()
-        out_dict['LR'] = self.var_L.detach()[0, 0].float() # [channel, 512, 512]
-        out_dict['SR'] = self.fake_H.detach()[0, 0].float() # [channel, 512, 512]
-        # print('get current visual shape LR:', out_dict['LR'].shape)
-        # print('HR shape:', out_dict['SR'].shape)
-        if maskOn:
-            # the way we contructed mask it is 1 x 1 x depth x height x width
-            mask = data['mask'].to(self.device).float()[0, 0, :]
-            # print('shap of mask:', mask.shape)
-            out_dict['SR'] *= mask
-            # print('unique element in mask', torch.unique(mask))
+        out_dict['LR'] = self.var_L.detach()[0, 0].float() # [1, 512, 512]
+        out_dict['SR'] = self.fake_H.detach()[0, 0].float() # [1, 512, 512]
         if need_HR:
             out_dict['HR'] = self.real_H.detach().float()[0, 0, :]
-            if maskOn:
-                out_dict['HR'] *= mask
         return out_dict
+
 
     """
     Prints out both the generator and discriminator network structure
@@ -175,6 +165,7 @@ class SRGANModel(BaseModel):
                     net_struc_str = '{}'.format(self.netF.__class__.__name__)
                 logger.info('Network F structure: {}, with parameters: {:,d}'.format(net_struc_str, n))
                 logger.info(s)
+
 
     """
     Load the generator and discriminator weights if provided

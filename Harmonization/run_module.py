@@ -2,6 +2,8 @@ import os
 import pickle
 from .data import create_dataset, create_dataloader
 from .models import create_model
+import numpy as np
+import nibabel as nib
 
 
 def main(config, global_logger, session_path):
@@ -29,11 +31,10 @@ def main(config, global_logger, session_path):
                 'scale': models_param['scale'] if models_param['scale'] is not None else 1.0
             }
             # create model and convert to fp16 for faster computation
-            model = create_model(model_opt)
-            model.half()
+            dl_model = create_model(model_opt)
+            dl_model.half()
 
             for dataset in datasets:
-                print('dataset:', dataset)
                 out_dir = os.path.join(session_path, current_mod, dataset)
                 os.makedirs(out_dir, exist_ok=True)
                 # load dataset-specific config
@@ -47,11 +48,17 @@ def main(config, global_logger, session_path):
                 """
                 for i, data in enumerate(test_loader):
                     need_HR = False if test_loader.dataset.opt.get('dataroot_HR') is None else True
-                    print('Inference for case:', data['uid'][0])
-                    model.feed_test_data(data, need_HR=need_HR)
-                    model.test(data)
-                    print('out done!')
-                    raise ValueError('Break')
+                    print('Inference for', data['uid'][0])
+                    dl_model.feed_test_data(data, need_HR=need_HR)
+                    dl_model.test(data)
+                    visuals = dl_model.get_current_visuals(data, need_HR=need_HR)
+                    sr_vol = dl_model.tensor2img(visuals['SR'], out_type=np.int16)
+                    save_vol_path = os.path.join(out_dir, data['uid'][0], 'Volume')
+                    os.makedirs(save_vol_path, exist_ok=True)
+                    # Save volume
+                    vol_path = os.path.join(save_vol_path, '{}--{}.nii.gz'.format(model, data['uid'][0]))
+                    nii_to_save = nib.Nifti1Image(sr_vol, affine=data['affine_info'].numpy().squeeze().astype(np.float64))
+                    nib.save(nii_to_save, vol_path)
 
     elif mode == 'train':
         pass

@@ -5,7 +5,7 @@ import torch.nn as nn
 import math
 import Harmonization.models.networks as networks
 import copy
-import sys
+import numpy as np
 
 
 class BaseModel():
@@ -16,7 +16,6 @@ class BaseModel():
         self.schedulers = [] 
         self.optimizers = []
         self.netG = networks.define_G(opt).to(self.device)
-        print('self.opt:', self.opt)
 
 
     """
@@ -155,6 +154,7 @@ class BaseModel():
             os.remove(os.path.join(self.opt['path']['training_state'], f))
         torch.save(state, save_path)
 
+
     def resume_training(self, resume_state):
         '''Resume the optimizers and schedulers for training'''
         resume_optimizers = resume_state['optimizers']
@@ -165,4 +165,20 @@ class BaseModel():
             self.optimizers[i].load_state_dict(o)
         for i, s in enumerate(resume_schedulers):
             self.schedulers[i].load_state_dict(s)
+
+
+    #############################
+    # image-specific operation #
+    # ###########################
+    def tensor2img(self, tensor, out_type=np.uint8, min_max=(0, 1), intercept=-1000.):
+        tensor = tensor.cpu().clamp_(*min_max)  # clamp
+        tensor = (tensor - tensor.min()) / (tensor.max() - tensor.min())
+        img_np = tensor.numpy()
+        if out_type == np.uint8:
+            img_np = (img_np * 255.0).round()
+        if out_type == np.uint16:
+            img_np = (img_np * 1500.0).round()
+        if out_type == np.int16:
+            img_np = (img_np * 1500.0).round() + intercept
+        return img_np.astype(out_type)
 
