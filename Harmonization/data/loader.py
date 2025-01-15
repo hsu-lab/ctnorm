@@ -23,12 +23,13 @@ class Loader(data.Dataset):
 
     def __getitem__(self, index):
         uid = self.uids[index]
-        in_dict = read_data(os.path.join(self.in_folder, uid+'.{}'.format(self.data_type)), self.data_type)
-        in_dict['dataroot_LR'] = self.ToTensor(in_dict['data'], min_HU_clip=0., max_HU_clip=1500., move_HU=0.)
+        affine_in, in_data = read_data(os.path.join(self.in_folder, uid+'.{}'.format(self.data_type)), self.data_type)
+        in_data = self.ToTensor(in_data, min_HU_clip=0., max_HU_clip=1500., move_HU=0.)
+        out_dict = {'uid':uid, 'affine_info': torch.from_numpy(affine_in), 'dataroot_LR':in_data}
         if self.tar_folder:
-            tar_data = read_data(os.path.join(self.tar_folder, uid+'.{}'.format(self.data_type)), self.data_type)
-        in_dict['uid'] = uid
-        return in_dict
+            affine_out, tar_data = read_data(os.path.join(self.tar_folder, uid+'.{}'.format(self.data_type)), self.data_type)
+            out_dict['dataroot_HR'] = tar_data
+        return out_dict
 
 
     def __len__(self):

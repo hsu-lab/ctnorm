@@ -33,8 +33,7 @@ def read_data(vol, ext):
         raise NotImplementedError("DICOM format handling not implemented yet.")
     else:
         raise ValueError('Unknown file format!... Expects only `nii`, `nii.gz`, or `dcm`')
-    o = {'affine':torch.from_numpy(affine_info), 'data':data.astype(np.int16)}
-    return o
+    return affine_info, data.astype(np.int16)
 
 
 """
