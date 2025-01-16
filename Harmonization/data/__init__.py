@@ -26,9 +26,14 @@ Create Dataset object for dataloader
 def create_dataset(dataset_opt, uids=False):
     from .loader import Loader as L
     if dataset_opt.get('uids'):
-        with open(dataset_opt.get('uids'), 'r') as f:
-            lines = f.readlines()
-        dataset_opt['uids'] = [l.rstrip() for l in lines]
+        if isinstance(dataset_opt.get('uids'), str):
+            with open(dataset_opt.get('uids'), 'r') as f:
+                lines = f.readlines()
+            dataset_opt['uids'] = [l.rstrip() for l in lines]
+        elif isinstance(dataset_opt.get('uids'), list):
+            pass
+        else:
+            raise NotImplementedError('Unknown uids type found!')
     else:
         dataset_opt['uids'] =  os.listdir(dataset_opt['input_path'])
     dataset = L(dataset_opt) # create dataobject

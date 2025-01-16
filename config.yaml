@@ -4,7 +4,7 @@ Global:
 Datasets:
   UCLA:
     input_path: "/data/data_st1.0_merged"
-    uids: "/data/uids/cv_uids/ucla_test_uids_fold_3_merged.txt"
+    uids: "/data/uids/cv_uids/ucla_test_uids_fold_3_merged-tmp.txt"
     type: "h5"
     description: "UCLA LDCT Dataset"
   NLST:

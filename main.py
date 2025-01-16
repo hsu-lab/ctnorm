@@ -28,7 +28,10 @@ if __name__ == "__main__":
     # Set up session folders
     session_path = create_session_folder(config)
     global_logger = setup_logger("base", session_path)
-    global_logger.info(f"Session output at: {session_path}")
+    global_logger.info(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    global_logger.info(f"Session output will be stored in: {session_path}")
+    global_logger.info("=" * 40)
+    session_start_time = time.time()
     
     # Run module
     for module_name, should_run in config['Modules'].items():
@@ -46,3 +49,9 @@ if __name__ == "__main__":
             #     global_logger.error(f"Module {module_name} not found!")
             # except Exception as e:
             #     global_logger.error(f"Error while running module {module_name}: {e}")
+
+    session_end_time = time.time()
+    total_elapsed_time = session_end_time - session_start_time
+    global_logger.info("=" * 40)
+    global_logger.info(f"Session completed successfully at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    global_logger.info(f"Total session duration: {total_elapsed_time:.2f} seconds")

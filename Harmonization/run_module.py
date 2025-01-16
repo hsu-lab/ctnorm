@@ -59,6 +59,7 @@ def main(config, global_logger, session_path):
                     vol_path = os.path.join(save_vol_path, '{}--{}.nii.gz'.format(model, data['uid'][0]))
                     nii_to_save = nib.Nifti1Image(sr_vol, affine=data['affine_info'].numpy().squeeze().astype(np.float64))
                     nib.save(nii_to_save, vol_path)
+                    break
 
     elif mode == 'train':
         pass
