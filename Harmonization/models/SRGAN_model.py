@@ -1,5 +1,4 @@
 import logging
-from collections import OrderedDict
 import torch
 import torch.nn as nn
 import sys
@@ -120,15 +119,6 @@ class SRGANModel(BaseModel):
     """
     def get_current_log(self):
         return self.log_dict
-
-
-    def get_current_visuals(self, data, need_HR=True):
-        out_dict = OrderedDict()
-        out_dict['LR'] = self.var_L.detach()[0, 0].float() # [1, 512, 512]
-        out_dict['SR'] = self.fake_H.detach()[0, 0].float() # [1, 512, 512]
-        if need_HR:
-            out_dict['HR'] = self.real_H.detach().float()[0, 0, :]
-        return out_dict
 
 
     """
