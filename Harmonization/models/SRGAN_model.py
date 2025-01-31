@@ -69,7 +69,7 @@ class SRGANModel(BaseModel):
 
         HR_ot = int(self.opt['dataset_opt']['scale'] * self.ot)
         num_HR, H, W = int(var_L_eval.size(2) * self.opt['dataset_opt']['scale']), var_L_eval.size(3), var_L_eval.size(4)
-        pt = int(self.opt['dataset_opt']['tile_z'] * self.opt['dataset_opt']['scale'])
+        pt_HR = int(self.opt['dataset_opt']['tile_z'] * self.opt['dataset_opt']['scale'])
         self.fake_H = torch.empty(1, 1,  num_HR, H, W, device=self.device)
         # ---------------------------- #
         #    Sliding Tile Inference    #
@@ -79,29 +79,30 @@ class SRGANModel(BaseModel):
                 for column in range(0, var_L_eval.size(4), self.opt['dataset_opt']['tile_xy']):
                     LR_chunked = var_L_eval[:, :, :, row:row+self.opt['dataset_opt']['tile_xy'], column:column+self.opt['dataset_opt']['tile_xy']]
                     if self.opt['precision'] == 'fp16':
-                        tmp_chunk_along_z = torch.empty(self.nt, 1, pt, self.opt['dataset_opt']['tile_xy'], self.opt['dataset_opt']['tile_xy'],
+                        tmp_chunk_along_z = torch.empty(self.nt, 1, pt_HR, self.opt['dataset_opt']['tile_xy'], self.opt['dataset_opt']['tile_xy'],
                                             dtype=torch.half, device=self.device)
                     else:
-                        tmp_chunk_along_z = torch.empty(self.nt, 1, pt, self.opt['dataset_opt']['tile_xy'], self.opt['dataset_opt']['tile_xy'],
+                        tmp_chunk_along_z = torch.empty(self.nt, 1, pt_HR, self.opt['dataset_opt']['tile_xy'], self.opt['dataset_opt']['tile_xy'],
                                             device=self.device)
+
                     # iterate over chunks
                     for i in range(0, self.nt - 1):
-                        tmp_chunk_along_z[i, :, :, :, :] = self.netG_eval(LR_chunked[:, :, i*(pt-self.ot):i*(pt-self.ot)+pt, :, :])
+                        tmp_chunk_along_z[i, :, :, :, :] = self.netG_eval(LR_chunked[:, :, i*(self.pt-self.ot):i*(self.pt-self.ot)+self.pt, :, :])
                     # add the last chunk
-                    tmp_chunk_along_z[-1, :, :, :, :] = self.netG_eval(LR_chunked[:, :, -pt:, :, :])
+                    tmp_chunk_along_z[-1, :, :, :, :] = self.netG_eval(LR_chunked[:, :, -self.pt:, :, :])
 
                     reconstructed_z = torch.empty(1, 1, num_HR, self.opt['dataset_opt']['tile_xy'],
                                                 self.opt['dataset_opt']['tile_xy'], device=self.device)
                     # stitch volume along z direction with overlap
                     stitch_mask = torch.zeros_like(reconstructed_z, device=self.device)
                     for i in range(0, self.nt - 1):
-                        ts, te = i * (pt - HR_ot), i * (pt - HR_ot) + pt
+                        ts, te = i * (pt_HR - HR_ot), i * (pt_HR - HR_ot) + pt_HR
                         reconstructed_z[0, 0, ts:te, :, :] = (reconstructed_z[0, 0, ts:te, :, :] * stitch_mask[0, 0, ts:te, :, :] + 
                                                                 tmp_chunk_along_z[i,...].float() * (2 - stitch_mask[0, 0, ts:te, :, :])) / 2
                         stitch_mask[0, 0, ts:te, :, :] = 1.
-                    reconstructed_z[0, 0, -pt:, :, :] = \
-                        (reconstructed_z[0, 0, -pt:, :, :] * stitch_mask[0, 0, -pt:, :, :] +
-                        tmp_chunk_along_z[-1,...].float() * (2 - stitch_mask[0, 0, -pt:, :, :])) / 2
+                    reconstructed_z[0, 0, -pt_HR:, :, :] = \
+                        (reconstructed_z[0, 0, -pt_HR:, :, :] * stitch_mask[0, 0, -pt_HR:, :, :] +
+                        tmp_chunk_along_z[-1,...].float() * (2 - stitch_mask[0, 0, -pt_HR:, :, :])) / 2
                     self.fake_H[0, 0, :, row:row+self.opt['dataset_opt']['tile_xy'], column:column+self.opt['dataset_opt']['tile_xy']] = reconstructed_z
 
         if self.opt['is_train']:

@@ -2,13 +2,10 @@ Global:
   session_base_path: "./SESSIONS"  # Base path where all session folders will be created
 
 Datasets:
-  UCLA:
-    input_path: "/data/data_st1.0_merged"
-    uids: "/data/uids/cv_uids/ucla_test_uids_fold_3_merged-tmp.txt"
-    type: "h5"
-    description: "UCLA LDCT Dataset"
   NLST:
-    input_path: "path/to/nlst"
+    # input_path: "/data" # "/data/data_st1.0_merged"
+    cases_uid: "/workspace/ctnorm/utils/nlst2mm_f.txt" # "/data/uids/cv_uids/ucla_test_uids_fold_3_merged-tmp.txt"
+    type: "dcm" # "h5"
     description: "National Lung Screening Trial dataset"
   CustomDataset:
     input_path: "path/to/custom"
@@ -33,15 +30,16 @@ Characterization:
 Harmonization:
   mode: "test"
   input_datasets:
-    - UCLA
+    - NLST
   models:
-    RRDB: "./Harmonization/pretrained_weights/RRDB/latest_G.pth"
+    SNGAN: "./Harmonization/pretrained_weights/SNGAN/latestG-1-1.pth"
+    # RRDB: "./Harmonization/pretrained_weights/RRDB/latestG-1-1.pth"
   param:
     tile_xy: 512
-    tile_z: 16
+    tile_z: 32
     z_overlap: 4
     gpu_id: 1
-    scale: 1.0
+    out_dtype: "dcm"
   Metrics:
     - sobelMap
     - tSNE

@@ -1,5 +1,8 @@
 __pycache__/
 SESSIONS/
+SESSIONS_NLST/
+utils/
 write_config.py
 *.sh
 *.pth
+run_docker.sh

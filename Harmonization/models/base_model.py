@@ -33,9 +33,9 @@ class BaseModel():
         self.var_L = data['dataroot_LR'].to(self.device, non_blocking=True)
         if need_HR:
             self.real_H = data['dataroot_HR'].to(self.device, non_blocking=True)
-        pt = self.opt['dataset_opt']['tile_z'] # 32
+        self.pt = self.opt['dataset_opt']['tile_z'] # 32
         self.ot = self.opt['dataset_opt']['z_overlap'] # 4
-        self.nt = 1 + math.ceil((self.var_L.size(2) - pt) / (pt - self.ot))
+        self.nt = 1 + math.ceil((self.var_L.size(2) - self.pt) / (self.pt - self.ot))
 
 
     """
@@ -180,6 +180,7 @@ class BaseModel():
         tensor = tensor.cpu().clamp_(*min_max)  # clamp
         tensor = (tensor - tensor.min()) / (tensor.max() - tensor.min())
         img_np = tensor.numpy()
+        img_np = img_np.transpose((1, 2, 0))
         if out_type == np.uint8:
             img_np = (img_np * 255.0).round()
         if out_type == np.uint16:
