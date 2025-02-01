@@ -61,7 +61,7 @@ def read_data(vol_pth, ext):
                         metadata.add(elem)
                 """
                 z_start = float(metadata.ImagePositionPatient[2])  # Starting Z position
-                z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position
+                z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position (top-bottom/bottom-top)
         data = _get_pixels_hu(slices)
         z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
         z_start = slices[0].ImagePositionPatient[2]
