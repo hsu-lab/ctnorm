@@ -54,4 +54,3 @@ def create_session_folder(config):
             module_folder = os.path.join(session_path, module_name)
             os.makedirs(module_folder, exist_ok=True)
     return session_path
-

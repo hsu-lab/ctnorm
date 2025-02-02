@@ -6,3 +6,5 @@ write_config.py
 *.sh
 *.pth
 run_docker.sh
+config_test.yaml
+config_train.yaml

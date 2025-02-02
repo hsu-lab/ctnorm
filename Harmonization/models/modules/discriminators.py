@@ -32,9 +32,8 @@ class Discriminator_VGG_64_SN(nn.Module):
         self.conv6 = utils.spectral_norm(nn.Conv3d(base_nf*4, base_nf*8, kernel_size=3, stride=1, padding=1))
         self.conv7 = utils.spectral_norm(nn.Conv3d(base_nf*8, base_nf*8, kernel_size=3, stride=2, padding=1))
         # 4, 512
-        # classifier
-        self.linear0 = utils.spectral_norm(nn.Linear(512 * 4 * 4 * 4, 512)) # for 1.0mm scale
-        # self.linear0 = utils.spectral_norm(nn.Linear(512 * 2 * 2 * 2, 512)) # for 2.0mm scale
+        self.adaptive_pool = nn.AdaptiveAvgPool3d((4, 4, 4))
+        self.linear0 = utils.spectral_norm(nn.Linear(512 * 4 * 4 * 4, 512)) # for 1.0-2mm scale
         self.linear1 = utils.spectral_norm(nn.Linear(512, 1))
 
     def forward(self, x):   # input size is 64x64
@@ -46,6 +45,7 @@ class Discriminator_VGG_64_SN(nn.Module):
         x = self.lrelu(self.conv5(x))
         x = self.lrelu(self.conv6(x))
         x = self.lrelu(self.conv7(x))
+        x = self.adaptive_pool(x)
         x = x.view(x.size(0), -1)
         x = self.lrelu(self.linear0(x))
         x = self.linear1(x)
@@ -70,11 +70,13 @@ class WGAN_Discriminator_VGG_64(nn.Module):
         # batch x    256  x 8 x   8 x  8
         self.features = B.sequential(conv0, conv1, conv2, conv3, conv4, conv5 )
         # classifier
+        self.adaptive_pool = nn.AdaptiveAvgPool3d((4, 4, 4))
         self.classifier = nn.Sequential(
-            nn.Linear(256 * 8 * 8 * 8, 1024), nn.LeakyReLU(0.2, True), nn.Linear(1024, 1))
+            nn.Linear(256 * 4 * 4 * 4, 1024), nn.LeakyReLU(0.2, True), nn.Linear(1024, 1))
 
     def forward(self, x):
         x = self.features(x)
+        x = self.adaptive_pool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x

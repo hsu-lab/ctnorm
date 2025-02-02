@@ -14,20 +14,21 @@ class BaseModel():
         self.opt = opt
         self.device = torch.device('cuda:{}'.format(opt['gpu_id']) if opt.get('gpu_id') is not None else 'cpu')
         self.is_train = opt['is_train']
-        self.schedulers = [] 
+        self.schedulers = []
         self.optimizers = []
         self.netG = networks.define_G(opt).to(self.device)
 
-
     """
-    Creates class attributes for 'LR' and 'HR' data
+    Get train data
     """
     def feed_train_data(self, data, need_HR=True):
-        pass
-
+        # get LR and HR data
+        self.var_L = data['dataroot_LR'].to(self.device, non_blocking=True)
+        if need_HR:
+            self.real_H = data['dataroot_HR'].to(self.device, non_blocking=True)
 
     """
-    prepare LR and HR output to feed to model
+    Get test data
     """
     def feed_test_data(self, data, need_HR=False):
         self.var_L = data['dataroot_LR'].to(self.device, non_blocking=True)
@@ -36,7 +37,6 @@ class BaseModel():
         self.pt = self.opt['dataset_opt']['tile_z'] # 32
         self.ot = self.opt['dataset_opt']['z_overlap'] # 4
         self.nt = 1 + math.ceil((self.var_L.size(2) - self.pt) / (self.pt - self.ot))
-
 
     """
     Copies fp32 model and convert to fp16
@@ -94,7 +94,6 @@ class BaseModel():
     def load(self):
         pass
 
-
     """
     For each schedulers, we step up the learning rate
     """
@@ -102,13 +101,11 @@ class BaseModel():
         for scheduler in self.schedulers:
             scheduler.step()
 
-
     """
     Returns the current learning rate of scheduler for generator only
     """
     def get_current_learning_rate(self):
         return self.schedulers[0].get_lr()[0]
-
 
     """
     Get string representation of a network and its parameters
@@ -119,7 +116,6 @@ class BaseModel():
         s = str(network)
         n = sum(map(lambda x: x.numel(), network.parameters()))
         return s, n
-
 
     """
     Save the model 'state_dict' given the iteration step
@@ -134,7 +130,6 @@ class BaseModel():
             state_dict[key] = param.cpu()
         torch.save(state_dict, save_path)
 
-
     """
     Loads the model with weights
     """
@@ -142,7 +137,6 @@ class BaseModel():
         if isinstance(network, nn.DataParallel):
             network = network.module
         network.load_state_dict(torch.load(load_path), strict=strict)
-
 
     """
     Saves training state during training
@@ -160,7 +154,6 @@ class BaseModel():
             os.remove(os.path.join(self.opt['path']['training_state'], f))
         torch.save(state, save_path)
 
-
     def resume_training(self, resume_state):
         '''Resume the optimizers and schedulers for training'''
         resume_optimizers = resume_state['optimizers']
@@ -171,7 +164,6 @@ class BaseModel():
             self.optimizers[i].load_state_dict(o)
         for i, s in enumerate(resume_schedulers):
             self.schedulers[i].load_state_dict(s)
-
 
     #############################
     # image-specific operation #

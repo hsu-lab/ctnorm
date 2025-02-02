@@ -3,6 +3,8 @@ import pydicom
 import nibabel as nib
 import pickle
 import numpy as np
+import torch
+import random
 
 
 def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path, z_position, thickness=1.0):
@@ -70,3 +72,26 @@ def save_volume(data, out_type, out_dir, m_type, f_name, target_scale=None):
             create_minimum_dicom_header(data[:,:,i], i + 1, dcm_metadata, slice_path, z_positions[i], thickness=out_thickness)
     else:
         raise NotImplementedError('{} extension not yet supported!'.format(out_type))
+
+
+"""
+Make directories; input is an instance of string
+"""
+def mkdirs(paths):
+    if isinstance(paths, str):
+        mkdir(paths)
+    else:
+        for path in paths:
+            mkdir(path)
+
+def mkdir(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
+def set_random_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+

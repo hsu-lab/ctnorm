@@ -6,6 +6,8 @@ import Harmonization.models.modules.generators as G_arch
 import torch.nn.init as init
 import math
 import sys
+from .build_unet import *
+
 logger = logging.getLogger('base')
 
 
@@ -13,7 +15,6 @@ logger = logging.getLogger('base')
 Define Generator Network and Initialize weights
 """
 def define_G(opt):
-    gpu_id = opt['gpu_id']
     opt_net = opt['network_G']
     which_model = opt_net['which_model_G']
     # Initialze model
@@ -25,7 +26,7 @@ def define_G(opt):
         netG = UNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'], nf=opt_net['nf'])
     elif which_model == 'vanilla':  # WGAN
         netG = G_arch.VanillaNet(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'], nf=opt_net['nf'], \
-                nb=opt_net['nb'])
+                nb=opt_net['nb'], upscale=opt_net['scale'])
     elif which_model == 'RRDB':
         netG = G_arch.RRDB_Gen(in_nc=opt_net['in_nc'], out_nc=opt_net['out_nc'], nf=opt_net['nf'],
             nb=opt_net['nb'], upscale=opt_net['scale'])
@@ -43,7 +44,6 @@ def define_G(opt):
 Define Discriminator network
 """
 def define_D(opt):
-    gpu_ids = opt['gpu_ids']
     opt_net = opt['network_D']
     which_model = opt_net['which_model_D']
     # Initialize model

@@ -16,9 +16,58 @@ logger = logging.getLogger('base')
 class SRModel(BaseModel):
     def __init__(self, opt):
         super(SRModel, self).__init__(opt)
+        train_opt = opt['train']
         if self.is_train:
-            train_opt = opt['train']
-            raise NotImplementedError('Train mode not implemented yet!')
+            self.netG.train()
+            loss_type = train_opt.get('pixel_criterion', 'l1')
+            if loss_type == 'l1':
+                self.cri_pix = nn.L1Loss().to(self.device)
+            elif loss_type == 'l2':
+                self.cri_pix = nn.MSELoss().to(self.device)
+            elif loss_type == 'huber':
+                self.cri_pix = nn.HuberLoss().to(self.device)
+            else:
+                raise NotImplementedError('Loss type [{:s}] is not recognized.'.format(loss_type))
+
+            self.l_pix_w = train_opt.get('pixel_weight', 1)
+            # set-up optimizers
+            wd_G = train_opt.get('weight_decay_G', 0)
+            optim_params = []
+            for k, v in self.netG.named_parameters():  # can optimize for a part of the model
+                if v.requires_grad:
+                    optim_params.append(v)
+                else:
+                    logger.warning('Params [{:s}] will not optimize.'.format(k))
+            
+            if opt["network_G"]["which_model_G"] == "fsrcnn":
+                self.optimizer_G = torch.optim.Adam([
+                        {'params': self.netG.first_part.parameters()},
+                        {'params': self.netG.mid_part.parameters()},
+                        {'params': self.netG.last_part.parameters(), 'lr':float(train_opt.get('lr_G', 1e-05)) * 0.1}
+                        ], lr=float(train_opt.get('lr_G', 1e-05)))
+            else:
+                self.optimizer_G = torch.optim.Adam(
+                    optim_params, lr=float(train_opt.get('lr_G', 1e-05)), weight_decay=wd_G, betas=(float(train_opt.get('beta1_G', 0.9)), float(train_opt.get('beta2_G', 0.99))))
+            self.optimizers.append(self.optimizer_G)
+
+            if train_opt['lr_scheme'] == 'MultiStepLR':
+                for optimizer in self.optimizers:
+                    self.schedulers.append(
+                        lr_scheduler.MultiStepLR_Restart(optimizer, train_opt.get('lr_steps', [20e3, 40e3, 60e3]),
+                                                         restarts=train_opt.get('restarts', None), # null
+                                                         weights=train_opt.get('restart_weights', None), # null
+                                                         gamma=train_opt.get('lr_gamma', 0.5),
+                                                         clear_state=train_opt.get('clear_state', None))) # None
+            elif train_opt['lr_scheme'] == 'CosineAnnealingLR':
+                for optimizer in self.optimizers:
+                    self.schedulers.append(
+                        lr_scheduler.CosineAnnealingLR_Restart(optimizer, train_opt['T_period'],
+                                                               eta_min=train_opt['eta_min'],
+                                                               restarts=train_opt['restarts'],
+                                                               weights=train_opt['restart_weights']))
+            else:
+                raise NotImplementedError('Choose MultiStepLR or CosineAnnealingLR')
+            self.log_dict = OrderedDict()
         self.print_network()
         self.load()
 
@@ -76,7 +125,13 @@ class SRModel(BaseModel):
             self.netG.train()
 
     def optimize_parameters(self, step):
-        pass
+        self.optimizer_G.zero_grad()
+        self.fake_H = self.netG(self.var_L)
+        l_pix = self.l_pix_w * self.cri_pix(self.fake_H, self.real_H)
+        with amp.scale_loss(l_pix, self.optimizer_G) as scale_loss:
+            scale_loss.backward()
+        self.optimizer_G.step()
+        self.log_dict['l_pix'] = l_pix.item()
 
     def get_current_log(self):
         return self.log_dict
@@ -92,7 +147,7 @@ class SRModel(BaseModel):
         logger.info(s)
 
     def load(self):
-        load_path_G = self.opt['path']['pretrain_model_G']
+        load_path_G = self.opt['path'].get('pretrained_G', None)
         if load_path_G is not None:
             logger.info('Loading pretrained model for G [{:s}] ...'.format(load_path_G))
             self.load_network(load_path_G, self.netG)

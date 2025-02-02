@@ -55,11 +55,19 @@ class QuantizedModel(nn.Module):
 # Low Dose CT Image Denoising Using a Generative Adversarial Network with Wasserstein Distance
 # and Perceptual Loss
 class VanillaNet(nn.Module):
-    def __init__(self, in_nc, out_nc, nf, nb):
+    def __init__(self, in_nc, out_nc, nf, nb, upscale=1):
         super(VanillaNet, self).__init__()
         layers = [nn.Conv3d(in_nc, nf, 3, 1, 1), nn.ReLU()]
         for _ in range(2, nb):
             layers.extend([nn.Conv3d(nf, nf, 3, 1, 1), nn.ReLU()])
+        if upscale != 1:
+            # For a 3D tensor with shape (N, C, D, H, W),
+            # scale_factor must be a tuple of three numbers.
+            up = nn.Upsample(scale_factor=(upscale, 1.0, 1.0), mode='nearest')
+            up_conv = [nn.Conv3d(nf, nf, kernel_size=3, stride=1, padding=1),
+                       nn.ReLU(inplace=True)]
+            layers.append(up)       # Append the upsampling module.
+            layers.extend(up_conv)  # Then extend with the upsampling convolution block.
         layers.extend([nn.Conv3d(nf, out_nc, 3, 1, 1)]) # removed ReLU layer for stability
         self.net = nn.Sequential(*layers)
 
