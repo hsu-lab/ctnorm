@@ -1,0 +1,35 @@
+Global:
+  session_base_path: "./SESSIONS"  # Base path where all session folders will be created
+
+Datasets:
+  NLST:
+    in_uids: "/workspace/ctnorm/utils/csvs/nlst2mm_subset.csv" # "/data/uids/cv_uids/ucla_test_uids_fold_3_merged-tmp.txt"
+    in_dtype: "dcm"
+    description: "National Lung Screening Trial dataset"
+
+Modules:
+  Characterization: false
+  Harmonization: true
+  Robustness: false
+
+Characterization:
+  input_datasets:
+    - NLST
+
+Harmonization:
+  mode: "test"
+  input_datasets:
+    - name: NLST
+  models:
+    - name: BM3D
+  param:
+    noise_type: "psd"
+    tile_xy: 512
+    tile_z: 32
+    z_overlap: 4
+    gpu_id: 0
+    scale: 2
+    out_dtype: "dcm"
+  metrics:
+    - sobel
+    - tsne

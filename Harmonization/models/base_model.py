@@ -165,19 +165,3 @@ class BaseModel():
         for i, s in enumerate(resume_schedulers):
             self.schedulers[i].load_state_dict(s)
 
-    #############################
-    # image-specific operation #
-    # ###########################
-    def tensor2img(self, tensor, out_type=np.uint8, min_max=(0, 1), intercept=-1000.):
-        tensor = tensor.cpu().clamp_(*min_max)  # clamp
-        tensor = (tensor - tensor.min()) / (tensor.max() - tensor.min())
-        img_np = tensor.numpy()
-        img_np = img_np.transpose((1, 2, 0))
-        if out_type == np.uint8:
-            img_np = (img_np * 255.0).round()
-        if out_type == np.uint16:
-            img_np = (img_np * 1500.0).round()
-        if out_type == np.int16:
-            img_np = (img_np * 1500.0).round() + intercept
-        return img_np.astype(out_type)
-

@@ -3,6 +3,7 @@ import pickle
 from .data import create_dataset, create_dataloader
 from .models import create_model
 from .helpers import helper_func
+from .nondl import _main
 import numpy as np
 import nibabel as nib
 from alive_progress import alive_bar
@@ -15,23 +16,29 @@ def main(config, global_logger, session_path):
     current_mod = os.path.basename(os.path.dirname(__file__))
     datasets = config[current_mod]['input_datasets']
     models = config[current_mod]['models']
-    models_param = config[current_mod]['param']
     mode = config[current_mod]['mode']
-    data_specific_opt = {
-        'tile_xy': models_param.get('tile_xy', 64),
-        'tile_z': models_param.get('tile_z', 32),
-        'z_overlap': models_param.get('z_overlap', 4),
-        'scale': models_param.get('scale', 1)
-    }
+    models_param = config[current_mod]['param']
 
     for model in models:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        cnf = os.path.join(base_dir, 'model_configs', model['name'].lower()+'.pkl')
-        # Load model-specific base params
-        with open(cnf, 'rb') as file:
+        cnf = os.path.join(base_dir, 'model_configs')
+
+        # Non-DL
+        if model['name'].lower()+'.pkl' not in os.listdir(cnf):
+            _main(config, global_logger, session_path, model)  
+            continue
+        
+        # DL - Load model-specific base params
+        data_specific_opt = {
+            'tile_xy': models_param.get('tile_xy', 64),
+            'tile_z': models_param.get('tile_z', 32),
+            'z_overlap': models_param.get('z_overlap', 4),
+            'scale': models_param.get('scale', 1)
+        }
+        with open(os.path.join(cnf, model['name'].lower()+'.pkl'), 'rb') as file:
             model_opt = pickle.load(file)
         if mode == 'train':
-            # # Override base model parameters if specified
+            # Override base model parameters if specified
             model_opt['is_train'] = True
             model_opt['path'] = {}
             model_opt['network_G']['in_nc'] = model.get('model_config', {}).get('nc_in', 1)
@@ -64,6 +71,7 @@ def main(config, global_logger, session_path):
 
         for dataset in datasets:
             out_d = os.path.join(session_path, current_mod, dataset['name'], mode)
+            global_logger.info('')
             os.makedirs(out_d, exist_ok=True)
 
             if mode == 'train':
@@ -137,7 +145,7 @@ def main(config, global_logger, session_path):
                 global_logger.info('End of training!')
 
             else:
-                # load dataset-specific config
+                # Load dataset-specific config
                 dataset_opt = config['Datasets'][dataset['name']]
                 if dataset.get('in_uids', None):
                     dataset_opt['in_uids'] = dataset['in_uids']
@@ -154,7 +162,7 @@ def main(config, global_logger, session_path):
                         dl_model.feed_test_data(data, need_HR=need_HR)
                         dl_model.test(data)
                         visuals = dl_model.get_current_visuals(data, need_HR=need_HR)
-                        sr_vol = dl_model.tensor2img(visuals['SR'], out_type=np.int16)
-                        # save output
+                        sr_vol = helper_func.tensor2img(visuals['SR'], out_type=np.int16)
+                        # Save output
                         helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume', f_name='{}--{}'.format(model['name'], data['uid'][0]), target_scale=models_param.get('scale', None))
                         bar()

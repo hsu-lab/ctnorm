@@ -7,4 +7,6 @@ write_config.py
 *.pth
 run_docker.sh
 config_test.yaml
+config_v1.yaml
+config_v2.yaml
 config_train.yaml

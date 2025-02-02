@@ -37,6 +37,7 @@ if __name__ == "__main__":
     for module_name, should_run in config['Modules'].items():
         if should_run:
             global_logger.info(f"Running module: {module_name}")
+            global_logger.info("-" * 40)
             # try:
             start_time = time.time()
             module_path = f"{module_name}.run_module"

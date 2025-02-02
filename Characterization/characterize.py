@@ -14,7 +14,7 @@ def data_char(input_file, out_dir, dataset_name, global_logger, bins=64, voxel=1
     try:
         # Load dataset paths from CSV
         input_df = pd.read_csv(input_file)
-        directory_paths = input_df['Directory']
+        directory_paths = input_df['uids']
     except Exception as e:
         global_logger.error(f"Error reading CSV file '{input_file}': {e}")
         return

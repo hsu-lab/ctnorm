@@ -19,7 +19,6 @@ def _check_transpose(vol):
         raise ValueError(f"Unexpected data shape: {vol.shape}. Unable to determine the correct transpose.")
     return vol
 
-
 def _get_pixels_hu(scans):
     image = np.stack([s.pixel_array for s in scans])
     image = image.astype(np.int16)
@@ -31,7 +30,6 @@ def _get_pixels_hu(scans):
         image = image.astype(np.int16)
     image += np.int16(intercept)
     return np.array(image, dtype=np.int16)
-
 
 def read_data(vol_pth, ext):
     if ext == 'nii' or ext == 'nii.gz':
@@ -52,20 +50,20 @@ def read_data(vol_pth, ext):
             dcm = pydicom.dcmread(os.path.join(vol_pth, s))
             slices.append(dcm)
             if index == 0:
-                metadata = dcm
+                metadata_only = pydicom.dcmread(os.path.join(vol_pth, s)) # stop_before_pixels=True
                 """
                 metadata = pydicom.Dataset()
                 # Copy all non-pixel data elements
                 for elem in dcm.iterall():
                     if elem.tag != (0x7FE0, 0x0010):  # Skip PixelData
                         metadata.add(elem)
-                """
-                z_start = float(metadata.ImagePositionPatient[2])  # Starting Z position
+                z_start = float(metadata_only.ImagePositionPatient[2])  # Starting Z position
                 z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position (top-bottom/bottom-top)
+                """
         data = _get_pixels_hu(slices)
         z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
         z_start = slices[0].ImagePositionPatient[2]
-        affine_info, header_info = np.eye(4), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata}
+        affine_info, header_info = np.eye(4), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
     else:
         raise ValueError('Unknown file format!... Expects only `nii`, `nii.gz`, or `dcm`')
     return affine_info, header_info, data.astype(np.int16)

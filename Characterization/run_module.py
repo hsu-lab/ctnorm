@@ -29,7 +29,7 @@ def main(config, global_logger, session_path):
             global_logger.error(f"Dataset '{dataset}' is missing in configuration under 'Datasets'.")
             continue
 
-        input_file = dataset_opt.get('input_path')
+        input_file = dataset_opt.get('in_uids')
         if not input_file:
             global_logger.error(f"Missing 'input_path' for dataset '{dataset}'.")
             continue
@@ -55,7 +55,6 @@ def main(config, global_logger, session_path):
         data_char(input_file, out_dir, dataset, global_logger, bins, voxel, metadata)
         # Check if both voxel and metadata are zero
         
-
         global_logger.info(f"Processing completed for dataset '{dataset}'.")
 
 
