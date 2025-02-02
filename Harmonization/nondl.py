@@ -68,7 +68,7 @@ def _main(config, logger, cur_sess_pth, model):
                         folder_name = '--'.join(in_uid.lstrip('/').split('/'))
                         helper_func.save_volume(in_data.astype(np.int16), out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, folder_name), m_type='Volume',
                         f_name='{}--{}'.format(model['name'], folder_name), meta=header_in,
-                        target_scale=models_param.get('scale', None))
+                        target_scale=None)
 
                     elif models_param['out_dtype'] == 'nii' or models_param['out_dtype'] == 'nii.gz':
                         raise NotImplementedError('.nii.gz not yet implemented!')
