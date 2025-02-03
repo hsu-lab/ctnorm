@@ -1,6 +1,5 @@
-pydicom
-nibabel
-h5py
+pydicom>=2.3.1
 torchio
+lifelines
 plotly
 alive-progress

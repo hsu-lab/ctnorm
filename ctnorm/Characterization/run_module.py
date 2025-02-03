@@ -21,41 +21,41 @@ def main(config, global_logger, session_path):
         return
 
     for dataset in datasets:
-        out_dir = os.path.join(session_path, current_mod, dataset)
+        out_dir = os.path.join(session_path, current_mod, dataset['name'])
         os.makedirs(out_dir, exist_ok=True)
 
-        dataset_opt = config.get('Datasets', {}).get(dataset)
+        dataset_opt = config.get('Datasets', {}).get(dataset['name'])
         if not dataset_opt:
             global_logger.error(f"Dataset '{dataset}' is missing in configuration under 'Datasets'.")
             continue
 
         input_file = dataset_opt.get('in_uids')
         if not input_file:
-            global_logger.error(f"Missing 'input_path' for dataset '{dataset}'.")
+            global_logger.error(f"Missing 'input_path' for dataset '{dataset['name']}'.")
             continue
 
         # Check if input file exists
         if not os.path.exists(input_file):
-            global_logger.error(f"Input file '{input_file}' not found for dataset '{dataset}'.")
+            global_logger.error(f"Input file '{input_file}' not found for dataset '{dataset['name']}'.")
             continue
 
         # Check if input file is a CSV
         if not input_file.endswith('.csv'):
-            global_logger.error(f"Invalid file format for dataset '{dataset}'. Expected CSV but got '{input_file}'.")
+            global_logger.error(f"Invalid file format for dataset '{dataset['name']}'. Expected CSV but got '{input_file}'.")
             continue
 
         bins = config[current_mod].get('bins', 64)
         voxel = config[current_mod].get('voxel', 1)
         metadata = config[current_mod].get('metadata', 1)
         if voxel == 0 and metadata == 0:
-            global_logger.error(f"Characterization will not be performed for dataset '{dataset}' as both voxel and metadata are set to 0.") 
+            global_logger.error(f"Characterization will not be performed for dataset '{dataset['name']}' as both voxel and metadata are set to 0.") 
             continue
         # Run data characterization
         # data_char(input_file, out_dir, dataset, global_logger, bins, voxel, metadata)
         data_char(input_file, out_dir, dataset, global_logger, bins, voxel, metadata)
         # Check if both voxel and metadata are zero
         
-        global_logger.info(f"Processing completed for dataset '{dataset}'.")
+        global_logger.info(f"Processing completed for dataset '{dataset['name']}'.")
 
 
 

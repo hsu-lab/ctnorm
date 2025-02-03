@@ -4,8 +4,6 @@ import torch.nn as nn
 from ctnorm.Harmonization.models import lr_scheduler as lr_scheduler
 from ctnorm.Harmonization.models import networks as networks
 from ctnorm.Harmonization.models.base_model import BaseModel
-from apex import amp
-import apex
 import torch.nn.functional as F
 import sys
 import numpy as np

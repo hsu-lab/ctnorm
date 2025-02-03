@@ -1,7 +1,7 @@
 import functools
-from typing import List, Optional, NamedTuple, Literal
+from typing import List, Optional, NamedTuple # Literal
+from typing_extensions import Literal # For older python versions
 from argparse import Namespace
-
 import torch
 import numpy as np
 import pydicom
@@ -138,7 +138,8 @@ class Serie:
         images = [i["input"] for i in input_dicts]
         return images
 
-    @functools.lru_cache
+    # @functools.lru_cache()
+    @functools.lru_cache(maxsize=128) # For older pytorch version
     def get_volume(self) -> torch.Tensor:
         """
         Load loaded 3D CT volume

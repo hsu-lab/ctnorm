@@ -22,15 +22,16 @@ def create_dataloader(dataset, dataset_opt):
             dataset, batch_size=1, shuffle=False, num_workers=1)
 
 
-def read_csv(path_to_csv):
+def read_csv(path_to_csv, required_columns=['uids']):
     if isinstance(path_to_csv, str):
         import pandas as pd
         df = pd.read_csv(path_to_csv)
-        lines = df['uids'].to_list()
-        lines = [l.rstrip() for l in lines]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise ValueError(f"Error: Missing columns in DataFrame {missing_columns} from file {path_to_csv}")
     else:
         raise NotImplementedError('Unknown uids type found! Must be path to CSV')
-    return lines
+    return df
 
 
 """
@@ -39,12 +40,14 @@ Create Dataset object for dataloader
 def create_dataset(dataset_opt):
     from .loader import Loader as L
     if dataset_opt.get('in_uids'):
-        in_uids_list = read_csv(dataset_opt['in_uids'])
+        in_uids_list = read_csv(dataset_opt['in_uids'])['uids'].tolist()
+        in_uids_list = [in_uid.rstrip() for in_uid in in_uids_list]
         dataset_opt['in_uids_names'] = sorted(in_uids_list, key=lambda x: os.path.basename(x))
     else:
         raise ValueError('CSV with path to input cases must be specified!')
     if dataset_opt.get('tar_uids'):
-        tar_uid_list = read_csv(dataset_opt['tar_uids'])
+        tar_uid_list = read_csv(dataset_opt['tar_uids'])['uids'].tolist()
+        tar_uid_list = [in_uid.rstrip() for in_uid in tar_uid_list]
         dataset_opt['tar_uids_names'] = sorted(tar_uid_list, key=lambda x: os.path.basename(x))
         # Ensure both in_uids and tar_uids have same path
         compare_in_tar(list1=dataset_opt['in_uids_names'], list2=dataset_opt['tar_uids_names'])

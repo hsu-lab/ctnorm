@@ -1,6 +1,7 @@
 __pycache__/
 SESSIONS/
 SESSIONS_NLST/
+SESSIONS_SYBIL/
 utils/
 write_config.py
 *.sh

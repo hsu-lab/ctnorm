@@ -379,7 +379,7 @@ class Sybil:
             Output evaluation. See details for :class:`~sybil.model.Evaluation`.
 
         """
-        from sybil.utils.metrics import get_survival_metrics
+        from ctnorm.Robustness.sybil.utils.metrics import get_survival_metrics
         if isinstance(series, Serie):
             series = [series]
         elif not isinstance(series, list):

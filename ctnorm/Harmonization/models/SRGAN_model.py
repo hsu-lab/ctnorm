@@ -14,7 +14,6 @@ establishes a set of properties that govern Amp’s implementation of pure or mi
 - opt_level: 01 = Mixed Precision (recommended for typical use)
 """
 from apex import amp
-import apex
 logger = logging.getLogger('base')
 
 
@@ -125,7 +124,7 @@ class SRGANModel(BaseModel):
         [self.netG, self.netD], [self.optimizer_G, self.optimizer_D] = \
         amp.initialize([self.netG, self.netD], [self.optimizer_G, self.optimizer_D],
                        opt_level=self.opt['opt_level'], num_losses = 2)
-        if self.opt['gpu_id']: 
+        if self.opt['gpu_id']:
             """
             Implements data parallelism at the module level. This container parallelizes 
             the application of the given module by splitting the input across the specified

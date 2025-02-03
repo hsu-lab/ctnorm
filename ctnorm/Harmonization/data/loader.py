@@ -11,11 +11,11 @@ class Loader(data.Dataset):
         self.FILL_RATIO_THRESHOLD = 0.8
         self.opt = opt
         # Set up path to data I/O
-        self.data_type = opt.get('in_dtype')
+        self.data_type = opt['in_dtype']
         self.in_uids = opt['in_uids_names']
         self.tar_uids = opt.get('tar_uids_names', None)
         self.mask_folder = opt.get('maskroot_path') # Currently not used!
-        self.out_dir = opt.get('out')
+        self.out_dir = opt['out']
         self.is_train = opt['is_train']
         # Define 3D patch size for training
         if self.is_train:

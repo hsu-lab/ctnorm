@@ -2,7 +2,8 @@ import cv2
 import torch
 import torchvision
 
-from typing import Literal
+# from typing import Literal
+from typing_extensions import Literal # For other python versions
 from abc import ABCMeta, abstractmethod
 import numpy as np
 import random

@@ -46,7 +46,9 @@ def _main(config, logger, cur_sess_pth, model):
         dataset_opt = config['Datasets'][dataset['name']]
         if dataset.get('in_uids', None):
             dataset_opt['in_uids'] = dataset['in_uids']
-        in_uids = read_csv(dataset_opt['in_uids'])
+        df = read_csv(dataset_opt['in_uids'])
+        in_uids = df['uids'].to_list()
+        in_uids = [in_uid.rstrip() for in_uid in in_uids]
 
         with alive_bar(len(in_uids), title='Processing files') as bar:
             for in_uid in in_uids:
