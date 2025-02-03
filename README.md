@@ -222,7 +222,12 @@ Robustness:
     load_from: "20250203-033504-40"  # Specify the session number from which to load `data_characterization.csv` 
 ```
 
-### Step 4: 🛠️ Run a Session
+### Step 4: 🖥️ Run a Session
 ```bash
 ctnorm --config config.yaml
 ```
+
+## 🌐 Launching a Web Server  
+
+🚧 **Work in Progress** 🚧  
+This feature is currently under development. Stay tuned for updates!
