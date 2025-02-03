@@ -50,7 +50,8 @@ docker run --name=<container_name> --shm-size=<memory_size> --gpus device=<gpu_i
 * *<container_name>*: Specify the name of the container.
 * *<memory_size>*: Specify the shared memory size (e.g., `2g`, `4g`, `6g`).
 * *<gpu_id>*: Specify the gpu device id. If no GPU is available, this parameter can be omitted.
-* *<path_to_input_data>*: Path to the input data directory, which will be mounted as `/data` in the container.
+* *<path_to_input_data>*: Path to the input data directory, which will be mounted as `/data` in the container.<br>
+🚨 **Note:** **The paths specified in the CSV file must be accessible within the mounted Docker container**.
 
 4️⃣ Install the CTNorm package locally:
 ```bash
@@ -127,7 +128,7 @@ Harmonization:
 | **RRDB** | Residual-in-Residual Dense Block, used in SRGAN-style super-resolution tasks. |
 | **BM3D** | A non-deep learning method for denoising medical images. |
 
-- We have provided the pretrained weights here. Update the `pretrained_G` parameter depending on the model accordingly.
+- We have provided the pretrained weights [here]([https://drive.google.com/drive/folders/1QdSkDIIEG2IivyHLMTH_PEOuaOrnXMUv?usp=drive_link]). Update the `pretrained_G` parameter depending on the model accordingly.
 
 For **BM3D**, only one **optional parameter** can be specified:
 ```yaml
@@ -205,7 +206,7 @@ Robustness:
     evaluate: false  # If true, requires label and time_to_event columns in `in_uids` CSV
 ```
 - `variability` defines the imaging variation to assess as identified in Characterization module.
-- If not specified, it will run **Sybil** on all cases specified in `in_uids`.
+- If not specified, it will run **Sybil** on all cases specified in `in_uids`.<br>
 🚨 **Note:** **Defined variability must exist in the generated `data_characterization.csv` file**.
 - If the **Robustness** module is run at a different time (not together with the **Characterization** module), a `load_from` parameter must be specified under param to load previously generated characterization data csv.
 ```yaml
@@ -225,4 +226,3 @@ Robustness:
 ```bash
 ctnorm --config config.yaml
 ```
-
