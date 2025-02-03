@@ -2,7 +2,7 @@ __pycache__/
 SESSIONS/
 SESSIONS_NLST/
 SESSIONS_SYBIL/
-utils/
+utils_tmp/
 write_config.py
 *.sh
 *.pth

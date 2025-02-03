@@ -3,13 +3,13 @@ Global:
 
 Datasets:
   NLST:
-    in_uids: "path_to_nlst_data_cases.csv"
+    in_uids: "path_to_nlst_cases.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
 
 Modules:
-  Characterization: true
-  Harmonization: true
+  Characterization: false
+  Harmonization: false
   Robustness: true
 
 Characterization:
