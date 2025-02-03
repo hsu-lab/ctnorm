@@ -1,0 +1,4 @@
+pydicom
+nibabel
+h5py
+alive-progress

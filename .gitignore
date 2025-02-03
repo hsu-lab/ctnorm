@@ -9,4 +9,5 @@ run_docker.sh
 config_test.yaml
 config_v1.yaml
 config_v2.yaml
+config_v3.yaml
 config_train.yaml

@@ -71,7 +71,6 @@ def main(config, global_logger, session_path):
 
         for dataset in datasets:
             out_d = os.path.join(session_path, current_mod, dataset['name'], mode)
-            global_logger.info('')
             os.makedirs(out_d, exist_ok=True)
 
             if mode == 'train':
@@ -145,6 +144,7 @@ def main(config, global_logger, session_path):
                 global_logger.info('End of training!')
 
             else:
+                global_logger.info('Harmonization output will be saved at: {}'.format(out_d))
                 # Load dataset-specific config
                 dataset_opt = config['Datasets'][dataset['name']]
                 if dataset.get('in_uids', None):

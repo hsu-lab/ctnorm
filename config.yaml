@@ -9,8 +9,8 @@ Datasets:
 
 Modules:
   Characterization: false
-  Harmonization: true
-  Robustness: false
+  Harmonization: false
+  Robustness: true
 
 Characterization:
   input_datasets:
@@ -21,15 +21,15 @@ Harmonization:
   input_datasets:
     - name: NLST
   models:
-    - name: BM3D
+    - name: WGAN
+      pretrained_G: "./Harmonization/pretrained_weights/WGAN/latestG-1-1.pth"
   param:
-    noise_type: "psd"
     tile_xy: 512
     tile_z: 32
     z_overlap: 4
     gpu_id: 0
-    scale: 2
     out_dtype: "dcm"
-  metrics:
-    - sobel
-    - tsne
+
+Characterization:
+  input_datasets:
+    - NLST

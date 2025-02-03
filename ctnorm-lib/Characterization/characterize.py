@@ -79,7 +79,7 @@ def data_char(input_file, out_dir, dataset_name, global_logger, bins=64, voxel=1
             mean_value = median_value = skewness_value = kurtosis_value = min_value = max_value = None
 
         folder_stats.append({
-            'directory': directory_path,
+            'uids': directory_path,
             'mean': mean_value,
             'median': median_value,
             'skewness': skewness_value,
