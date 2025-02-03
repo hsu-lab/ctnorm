@@ -3,7 +3,7 @@ Global:
 
 Datasets:
   NLST:
-    in_uids: "/workspace/ctnorm/utils/csvs/nlst2mm_subset.csv"
+    in_uids: "path_to_nlst_data_cases.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
 
@@ -20,6 +20,7 @@ Harmonization:
   mode: "test"
   input_datasets:
     - name: NLST
+      in_uids: "path_to_nlst_subset.csv"
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
@@ -33,10 +34,11 @@ Harmonization:
 Robustness:
   input_datasets:
     - name: NLST
-      in_uids: "./utils/csvs/nlst2mm_subset_with_label.csv"
+      in_uids: "path_to_nlst_subset.csv"
       variability:
-        name: "manufacturer" # convolution_kernel, slice_thickness
-        # load_from: "20250203-033504-40"
+        name: "manufacturer"
   param:
-    model_type: "sybil_ensemble" # sybil_1, sybil_2, sybil_3, sybil_4, sybil_5 and sybil_ensemble
-    evaluate: false # label and time_to_event column needed for evaluation
+    model_type: "sybil_ensemble"
+    evaluate: false
+
+  

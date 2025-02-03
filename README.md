@@ -143,7 +143,8 @@ Harmonization:
   mode: "train"  # Runs harmonization in training mode
   input_datasets:
     - name: NLST  # Source dataset ->  ✅ Valid - Must match a dataset in the `Datasets` section
-      tar_uids: "/path_to_nlst_target_cases.csv"  # Target dataset (paired data for training)
+      in_uids: "path_to_nlst_subset.csv"
+      tar_uids: "/path_to_nlst_target_subset.csv"  # Target dataset (paired data for training)
   models:
     - name: SNGAN  # Model name
       model_config:
@@ -190,3 +191,38 @@ param:
 - Example: If the input scans are 2mm slices, setting `scale`: 2 will train the model to generate 1mm slices.
 - If scale is not specified, the model will not alter slice thickness.
 - If `scale` is specified, ensure that the target and source scans have the correctly scaled slice thicknesses.
+
+> We currently have **Sybil** model integrated as part of the robustness analysis module
+```yaml
+Robustness:
+  input_datasets:
+    - name: NLST
+      in_uids: "path_to_nlst_data_cases.csv" # 🔹 (Optional) Overrides the `in_uids` from the `Datasets` section if specified
+      variability: # 🔹 (Optional)
+        name: "manufacturer"  # Other options: "convolution_kernel", "slice_thickness"
+  param:
+    model_type: "sybil_ensemble"  # Options: sybil_1, sybil_2, sybil_3, sybil_4, sybil_5, sybil_ensemble
+    evaluate: false  # If true, requires label and time_to_event columns in `in_uids` CSV
+```
+- `variability` defines the imaging variation to assess as identified in Characterization module.
+- If not specified, it will run **Sybil** on all cases specified in `in_uids`.
+🚨 **Note:** **Defined variability must exist in the generated `data_characterization.csv` file**.
+- If the **Robustness** module is run at a different time (not together with the **Characterization** module), a `load_from` parameter must be specified under param to load previously generated characterization data csv.
+```yaml
+Robustness:
+  input_datasets:
+    - name: NLST
+      in_uids: "./utils/csvs/path_to_nlst_data_cases.csv"
+      variability:
+        name: "manufacturer"
+  param:
+    model_type: "sybil_ensemble"
+    evaluate: false
+    load_from: "20250203-033504-40"  # Specify the session number from which to load `data_characterization.csv` 
+```
+
+### Step 4: 🛠️ Run a Session
+```bash
+ctnorm --config config.yaml
+```
+
