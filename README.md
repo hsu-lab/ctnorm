@@ -4,7 +4,7 @@
   <img src="./assets/workflow.png" alt="Example Image" width="70%"/>
 </p>
 
-The repository contains usage instructions for CTNorm: a module that integrates a variety of image harmonization methods into a unified framework. Deep learning based models within CTNom has been trained on UCLA LDCT dataset.
+The repository contains usage instructions for CTNorm: a toolkit that offer modules for data understanding, image harmonization, and model performance evaluation across different datasets.
 
 ## 🚀 Getting Started
 
@@ -44,7 +44,7 @@ docker pull litou/mii-pytorch:20.11
 ```
 3️⃣ Run Docker in interactive mode
 ```bash
-docker run --name=<container_name> --shm-size=<memory_size> --gpus device=<gpu_id> -v /etc/localtime:/etc/localtime:ro -v "$(pwd)":/workspace -v <path_to_input_data>:/data litou/mii-pytorch:20.11
+docker run --name=<container_name> --shm-size=<memory_size> --gpus device=<gpu_id> -it --rm -v /etc/localtime:/etc/localtime:ro -v "$(pwd)":/workspace -v <path_to_input_data>:/data litou/mii-pytorch:20.11
 ```
 **Parameters:**
 * *<container_name>*: Specify the name of the container.
