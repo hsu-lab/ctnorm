@@ -1,9 +1,9 @@
 Global:
-  session_base_path: "./SESSIONS"  # Base path where all session folders will be created
+  session_base_path: "./SESSIONS"
 
 Datasets:
   NLST:
-    in_uids: "/workspace/ctnorm/utils/csvs/nlst2mm_subset.csv" # "/data/uids/cv_uids/ucla_test_uids_fold_3_merged-tmp.txt"
+    in_uids: "/workspace/ctnorm/utils/csvs/nlst2mm_subset.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
 
