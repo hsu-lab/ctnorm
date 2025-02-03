@@ -1,7 +1,7 @@
 import yaml
 import sys
 import argparse
-from helpers import *
+from .helpers import *
 import importlib
 import time
 
@@ -18,17 +18,20 @@ def load_config(config_path):
         sys.exit(1)
 
 
-if __name__ == "__main__":
-    # Parse CLI
+def main():
+    """Main function to execute ctnorm with CLI arguments."""
+    # Parse CLI arguments
     parser = argparse.ArgumentParser(description="Run Toolkit Modules")
-    parser.add_argument('--opt', type=str, required=True, help="Path to the config file")
+    parser.add_argument('--config', type=str, required=True, help="Path to the config file")
     args = parser.parse_args()
-    config = load_config(args.opt)
+    
+    # Load the configuration file
+    config = load_config(args.config)
 
     # Set up session folders
     session_path = create_session_folder(config)
     global_logger = setup_logger("base", session_path)
-    global_logger.info(f"Session started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    global_logger.info(f"Session started at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     global_logger.info(f"Session output will be stored in: {session_path}")
     global_logger.info("=" * 40)
     session_start_time = time.time()
@@ -38,21 +41,20 @@ if __name__ == "__main__":
         if should_run:
             global_logger.info(f"Running module: {module_name}")
             global_logger.info("-" * 40)
-            # try:
             start_time = time.time()
-            module_path = f"{module_name}.run_module"
+            module_path = f"ctnorm.{module_name}.run_module"
             module = importlib.import_module(module_path)
             module.main(config, global_logger, session_path)
             end_time = time.time()
             elapsed_time = end_time - start_time
             global_logger.info(f"Completed module {module_name} in {elapsed_time:.2f} seconds")
-            # except ModuleNotFoundError:
-            #     global_logger.error(f"Module {module_name} not found!")
-            # except Exception as e:
-            #     global_logger.error(f"Error while running module {module_name}: {e}")
 
     session_end_time = time.time()
     total_elapsed_time = session_end_time - session_start_time
     global_logger.info("=" * 40)
-    global_logger.info(f"Session completed successfully at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    global_logger.info(f"Session completed successfully at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
     global_logger.info(f"Total session duration: {total_elapsed_time:.2f} seconds")
+
+
+if __name__ == "__main__":
+    main()

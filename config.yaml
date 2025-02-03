@@ -14,7 +14,7 @@ Modules:
 
 Characterization:
   input_datasets:
-    - NLST
+    - name: NLST
 
 Harmonization:
   mode: "test"
