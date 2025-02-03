@@ -128,7 +128,7 @@ Harmonization:
 | **RRDB** | Residual-in-Residual Dense Block, used in SRGAN-style super-resolution tasks. |
 | **BM3D** | A non-deep learning method for denoising medical images. |
 
-- We have provided the pretrained weights [here]([https://drive.google.com/drive/folders/1QdSkDIIEG2IivyHLMTH_PEOuaOrnXMUv?usp=drive_link]). Update the `pretrained_G` parameter depending on the model accordingly.
+- We have provided the pretrained weights [here](https://drive.google.com/drive/folders/1QdSkDIIEG2IivyHLMTH_PEOuaOrnXMUv?usp=drive_link). Update the `pretrained_G` parameter depending on the model accordingly.
 
 For **BM3D**, only one **optional parameter** can be specified:
 ```yaml
