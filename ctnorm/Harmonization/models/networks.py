@@ -1,8 +1,8 @@
 import logging
 import torch
 import torch.nn as nn
-import Harmonization.models.modules.discriminators as D_arch
-import Harmonization.models.modules.generators as G_arch
+import ctnorm.Harmonization.models.modules.discriminators as D_arch
+import ctnorm.Harmonization.models.modules.generators as G_arch
 import torch.nn.init as init
 import math
 import sys

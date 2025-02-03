@@ -3,7 +3,7 @@ import glob
 import torch
 import torch.nn as nn
 import math
-import Harmonization.models.networks as networks
+import ctnorm.Harmonization.models.networks as networks
 from collections import OrderedDict
 import copy
 import numpy as np

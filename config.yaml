@@ -8,9 +8,9 @@ Datasets:
     description: "National Lung Screening Trial dataset"
 
 Modules:
-  Characterization: false
-  Harmonization: false
-  Robustness: true
+  Characterization: true
+  Harmonization: true
+  Robustness: false
 
 Characterization:
   input_datasets:
@@ -22,7 +22,7 @@ Harmonization:
     - name: NLST
   models:
     - name: WGAN
-      pretrained_G: "./Harmonization/pretrained_weights/WGAN/latestG-1-1.pth"
+      pretrained_G: "./pretrained_weights/WGAN/latestG-1-1.pth"
   param:
     tile_xy: 512
     tile_z: 32

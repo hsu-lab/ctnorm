@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import sys
 from collections import OrderedDict
-from Harmonization.models import lr_scheduler as lr_scheduler
-from Harmonization.models import networks as networks
-from Harmonization.models.base_model import BaseModel
-from Harmonization.models.modules.loss import GANLoss, GradientPenaltyLoss
+from ctnorm.Harmonization.models import lr_scheduler as lr_scheduler
+from ctnorm.Harmonization.models import networks as networks
+from ctnorm.Harmonization.models.base_model import BaseModel
+from ctnorm.Harmonization.models.modules.loss import GANLoss, GradientPenaltyLoss
 """
 Amp allows to experiment with different pure and mixed precision modes. 
 Commonly-used default modes are chosen by selecting an “optimization level” or opt_level; each opt_level 

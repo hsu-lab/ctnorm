@@ -1,9 +1,9 @@
 from collections import OrderedDict
 import torch
 import torch.nn as nn
-from Harmonization.models import lr_scheduler as lr_scheduler
-from Harmonization.models import networks as networks
-from Harmonization.models.base_model import BaseModel
+from ctnorm.Harmonization.models import lr_scheduler as lr_scheduler
+from ctnorm.Harmonization.models import networks as networks
+from ctnorm.Harmonization.models.base_model import BaseModel
 from apex import amp
 import apex
 import torch.nn.functional as F

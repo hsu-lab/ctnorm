@@ -1,0 +1,3 @@
+[console_scripts]
+ctnorm = ctnorm.main:main
+
