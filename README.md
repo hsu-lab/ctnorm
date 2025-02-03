@@ -79,7 +79,7 @@ Datasets:
     description: "SPIE LungX dataset"
 
 ```
-- Each dataset must have in_uids, in_dtype, and description fields.
+- Each dataset must have `in_uids`, `in_dtype`, and `description` fields.
 - The dataset name (e.g., `NLST`, `SPIE`) is a user-defined key and should be unique.
 ```yaml
 Modules:
@@ -130,7 +130,7 @@ Harmonization:
 
 - We have provided the pretrained weights [here](https://drive.google.com/drive/folders/1QdSkDIIEG2IivyHLMTH_PEOuaOrnXMUv?usp=drive_link). Update the `pretrained_G` parameter depending on the model accordingly.
 
-For **BM3D**, only one **optional parameter** can be specified:
+For **BM3D**, only one **optional parameter** can be specified; other parameters are not needed:
 ```yaml
 models:
   - name: BM3D
