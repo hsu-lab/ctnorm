@@ -205,7 +205,7 @@ Robustness:
     model_type: "sybil_ensemble"  # Options: sybil_1, sybil_2, sybil_3, sybil_4, sybil_5, sybil_ensemble
     evaluate: false  # If true, requires label and time_to_event columns in `in_uids` CSV
 ```
-- `variability` defines the imaging variation to be assessed, as identified in Characterization module.
+- `variability` defines the imaging variation to be assessed, as identified in **Characterization** module.
 - If not specified, it will run **Sybil** on all cases specified in `in_uids`.<br>
 🚨 **Note:** **Defined variability must exist in the generated `data_characterization.csv` file**.
 - If the **Robustness** module is run at a different time (not together with the **Characterization** module), a `load_from` parameter must be specified under param to load previously generated characterization data csv.
