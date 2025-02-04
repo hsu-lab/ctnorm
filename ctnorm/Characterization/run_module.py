@@ -11,14 +11,11 @@ def main(config, global_logger, session_path):
     current_mod = os.path.basename(os.path.dirname(__file__))
     
     if current_mod not in config:
-        global_logger.error(f"Configuration for module '{current_mod}' is missing.")
-        return
+        raise RuntimeError(f"Configuration for module '{current_mod}' is missing.")
 
     datasets = config[current_mod].get('input_datasets', [])
-    
     if not datasets:
-        global_logger.error("No datasets found in configuration.")
-        return
+        raise RuntimeError("No datasets found in configuration.")
 
     for dataset in datasets:
         out_dir = os.path.join(session_path, current_mod, dataset['name'])
@@ -26,8 +23,7 @@ def main(config, global_logger, session_path):
 
         dataset_opt = config.get('Datasets', {}).get(dataset['name'])
         if not dataset_opt:
-            global_logger.error(f"Dataset '{dataset}' is missing in configuration under 'Datasets'.")
-            continue
+            raise RuntimeError(f"Dataset '{dataset}' is missing in configuration under 'Datasets'.")
 
         input_file = dataset_opt.get('in_uids')
         if not input_file:
@@ -36,25 +32,22 @@ def main(config, global_logger, session_path):
 
         # Check if input file exists
         if not os.path.exists(input_file):
-            global_logger.error(f"Input file '{input_file}' not found for dataset '{dataset['name']}'.")
-            continue
+            raise RuntimeError(f"Input file '{input_file}' not found for dataset '{dataset['name']}'.")
 
         # Check if input file is a CSV
         if not input_file.endswith('.csv'):
-            global_logger.error(f"Invalid file format for dataset '{dataset['name']}'. Expected CSV but got '{input_file}'.")
-            continue
+            raise RuntimeError(f"Invalid file format for dataset '{dataset['name']}'. Expected CSV but got '{input_file}'.")
 
         bins = config[current_mod].get('bins', 64)
         voxel = config[current_mod].get('voxel', 1)
         metadata = config[current_mod].get('metadata', 1)
         if voxel == 0 and metadata == 0:
-            global_logger.error(f"Characterization will not be performed for dataset '{dataset['name']}' as both voxel and metadata are set to 0.") 
-            continue
+            raise RuntimeError(f"Characterization will not be performed for dataset '{dataset['name']}' as both voxel and metadata are set to 0.")
+
         # Run data characterization
         # data_char(input_file, out_dir, dataset, global_logger, bins, voxel, metadata)
         data_char(input_file, out_dir, dataset, global_logger, bins, voxel, metadata)
         # Check if both voxel and metadata are zero
-        
         global_logger.info(f"Processing completed for dataset '{dataset['name']}'.")
 
 

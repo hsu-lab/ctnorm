@@ -1,16 +1,16 @@
 Global:
-  session_base_path: "./SESSIONS"
+  session_base_path: "./SESSIONS_ST"
 
 Datasets:
   NLST:
-    in_uids: "path_to_nlst_cases.csv"
+    in_uids: "./utils_tmp/csvs/nlst2mm_subset.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
 
 Modules:
   Characterization: false
-  Harmonization: false
-  Robustness: true
+  Harmonization: true
+  Robustness: false
 
 Characterization:
   input_datasets:
@@ -20,7 +20,7 @@ Harmonization:
   mode: "test"
   input_datasets:
     - name: NLST
-      in_uids: "path_to_nlst_subset.csv"
+      # in_uids: "path_to_nlst_subset.csv"
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
@@ -34,11 +34,10 @@ Harmonization:
 Robustness:
   input_datasets:
     - name: NLST
-      in_uids: "path_to_nlst_subset.csv"
+      # in_uids: "path_to_nlst_subset.csv"
       variability:
         name: "manufacturer"
   param:
     model_type: "sybil_ensemble"
     evaluate: false
 
-  
