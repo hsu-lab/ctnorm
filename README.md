@@ -44,12 +44,13 @@ docker pull litou/mii-pytorch:20.11
 ```
 3️⃣ Run Docker in interactive mode
 ```bash
-docker run --name=<container_name> --shm-size=<memory_size> --gpus device=<gpu_id> -it --rm -v /etc/localtime:/etc/localtime:ro -v "$(pwd)":/workspace -v <path_to_input_data>:/data litou/mii-pytorch:20.11
+docker run --name=<container_name> --shm-size=<memory_size> --gpus device=<gpu_id> -it --rm -p <port_number>:<port_number> -v /etc/localtime:/etc/localtime:ro -v "$(pwd)":/workspace -v <path_to_input_data>:/data litou/mii-pytorch:20.11
 ```
 **Parameters:**
 * *<container_name>*: Specify the name of the container.
 * *<memory_size>*: Specify the shared memory size (e.g., `2g`, `4g`, `6g`).
 * *<gpu_id>*: Specify the gpu device id. If no GPU is available, this parameter can be omitted.
+* *<port_number>*: Specify a port number in Docker. This is required when running the Flask component of the toolkit.
 * *<path_to_input_data>*: Path to the input data directory, which will be mounted as `/data` in the container.<br>
 🚨 **Note:** **The paths specified in the CSV file must be accessible within the mounted Docker container**.
 
@@ -227,7 +228,24 @@ Robustness:
 ctnorm --config config.yaml
 ```
 
-## 🌐 Launching a Web Server  
+## 🌐 Launching a Web Server
+
+CTNorm also offers a user-friendly interface to visualize the outputs of each session.<br>
+🚨 **Note:** **Currently, only the raw Harmonization output can be visualized. Support for other module outputs and features will be added soon!!**
+
+- To launch the app:
+```bash
+ctnorm-webapp --port <port_number> --session-out <path_to_session_folder>
+```
+**Parameters:**
+* *<port_number>*: Specify the **port exposed in the Docker container**. This must match the port defined when running Docker (**Step 2: 3️⃣ Running Docker in interactive mode**).
+* *<path_to_session_folder>*: Provide the **path** to the folder where all session outputs are stored. This should be the same session directory used when running the CTNorm Toolkit.
+
+> The Flask application displays the status of all sessions. Sessions that are complete can be **started**.  
+Currently, it will **directly navigate** to the Harmonization page.
+
+🚨 **Popup Blocker Warning:**  
+The image viewer opens in a **popup window**. Some browsers may block popups by default. If you see a **popup blocked notification**, allow it to ensure the viewer opens correctly.
 
 🚧 **Work in Progress** 🚧  
-This feature is currently under development. Stay tuned for updates!
+More features coming soon!
