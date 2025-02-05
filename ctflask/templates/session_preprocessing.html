@@ -1,0 +1,330 @@
+{% extends "layout.html" %}
+
+{% block header %}
+<form action="{{ url_for('reset_sess') }}" method="GET" class="row g-2 align-items-center">
+    <div class="col-auto nav-item">
+        <button 
+            class="btn btn-primary px-3" 
+            type="submit"
+        >
+            Reset Session
+        </button>
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    // Function to check if both selects have values
+    function checkSelections() {
+        var datasetid = $('#datasetid').val();
+        var caseid = $('#caseid').val();
+        var metricsSelected = $('.metric-check-input:checked').length > 0; // Check if at least one metric is selected
+        var modelsSelected = $('.model-check-input:checked').length > 0; // Check if at least one model is selected
+
+        // Enable the "Select Metric" dropdown only if case is selected
+        if (caseid) {
+            $('#dropdownMenuButton').prop('disabled', false); // Enable Select Metric when a case is selected
+            $('#modelOption').prop('disabled', false);
+        } else {
+            $('#dropdownMenuButton').prop('disabled', true); // Keep Select Metric disabled until case is selected
+            $('#modelOption').prop('disabled', true);
+        }
+        // Enable the "Generate" button only if both metrics and models are selected
+        if (metricsSelected && modelsSelected) {
+            $('#generateButton').prop('disabled', false); // Enable Generate button when both metrics and models are selected
+        } else {
+            $('#generateButton').prop('disabled', true); // Keep Generate button disabled
+        }
+    }
+
+    // Event listeners to check selections
+    $('#datasetid, #caseid').change(function() {
+        checkSelections();
+    });
+    $(document).on('change', '.form-check-input', function() {
+        checkSelections();
+    });
+    // Initial check on page load
+    checkSelections();
+
+    // Handle dataset change to populate cases and models
+    $("#datasetid").change(function() {
+        let dataset = $(this).val();  // Get the selected dataset value
+        if (dataset != '') {
+            let dataToSend = {
+                "dataset": dataset  // Send the selected dataset as JSON
+            };
+
+            // AJAX POST request to fetch cases and models
+            $.ajax({
+                url: '/submit-dataset',  // Flask endpoint
+                type: 'POST',            // HTTP method
+                contentType: 'application/json',  // Sending JSON data
+                data: JSON.stringify(dataToSend),  // Convert data to JSON string
+                success: function(response) {
+                    console.log('Response from server:', response);
+                    
+                    // Clear existing options in the case select element
+                    $('#caseid').empty();  
+                    $('#caseid').append('<option selected="true" disabled="disabled" value="">Select Case</option>');
+                    
+                    // Check if we received files for cases
+                    if (response.status === "success" && response.files.length > 0) {
+                        // Populate #caseid with filenames
+                        response.files.forEach(function(file) {
+                            $('#caseid').append('<option value="' + file + '">' + file + '</option>');
+                        });
+                    } else {
+                        alert('No files found in the selected dataset.');
+                    }
+
+                    // Enable the "Select Metric" dropdown and populate options
+                    if (response.status === "success" && response.metrics.length > 0) {
+                        $('#dropdownMenuButton').next('.dropdown-menu').empty();
+                        response.metrics.forEach(function(metric, index) {
+                            var item = `
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <div class="form-check">
+                                            <input class="form-check-input metric-check-input" type="checkbox" value="${metric.toLowerCase()}" id="${metric.toLowerCase()}" ${index === 0 ? 'checked' : ''} />
+                                            <label class="form-check-label" for="${metric.toLowerCase()}">${metric}</label>
+                                        </div>
+                                    </a>
+                                </li>
+                            `;
+                            $('#dropdownMenuButton').next('.dropdown-menu').append(item);
+                        });
+                    }
+
+                    // Populate the "Select Model" dropdown with models
+                    if (response.status === "success" && response.models.length > 0) {
+                        $('#modelOption').next('.dropdown-menu').empty();
+                        response.models.forEach(function(model) {
+                            var modelItem = `
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <div class="form-check">
+                                            <input class="form-check-input model-check-input" type="checkbox" value="${model}" id="model-${model.toLowerCase()}" />
+                                            <label class="form-check-label" for="model-${model.toLowerCase()}">${model}</label>
+                                        </div>
+                                    </a>
+                                </li>
+                            `;
+                            $('#modelOption').next('.dropdown-menu').append(modelItem);
+                        });
+                    }
+
+                },
+                error: function(xhr, status, error) {
+                    console.error("AJAX Error:", error);
+                    alert('An error occurred while fetching the files.');
+                }
+            });
+        } else {
+            // If no dataset is selected, clear the case select and model select
+            $('#caseid').empty();
+            $('#caseid').append('<option selected="true" disabled="disabled" value="">Select Case</option>');
+            $('#dropdownMenuButton').prop('disabled', true); // Disable Select Metric
+            $('#modelOption').prop('disabled', true); // Disable Select Model
+        }
+    });
+
+    // Handle Generate Button click (AJAX request)
+    $('#generateButton').click(function() {
+        // Collect data from form elements
+        var datasetid = $('#datasetid').val();
+        var caseid = $('#caseid').val();
+        
+        // Collect the selected metrics
+        var selectedMetrics = [];
+        $('.metric-check-input:checked').each(function() {
+            selectedMetrics.push($(this).val());
+        });
+        // Collect the selected models
+        var selectedModels = [];
+        $('.model-check-input:checked').each(function() {
+            selectedModels.push($(this).val());
+        });
+
+        // Prepare the data to send via AJAX
+        var data = {
+            'datasetid': datasetid,
+            'caseid': caseid,
+            'metrics': selectedMetrics,
+            'models': selectedModels
+        };
+
+        // Show loading spinner
+        $('#loading-spinner').show();
+        // document.getElementById("accordionExample").style.display = "none";  // Hide the accordion initially (set display: none)
+
+        // Send AJAX request to get Plotly figure
+        $.ajax({
+            url: '/submit-preprocessing',  // Flask route to handle the request
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function(response) {
+                // Hide the loading spinner
+                $('#loading-spinner').hide();
+                console.log('Response:', response);
+                
+                // Dynamically generate the grid for the figures
+                if (response.status === 'success') {
+                    window.open('/dicom/', '_blank', 'width=1200,height=700');
+                } else {
+                    console.log('Error generating figure:', response.message);
+                }
+            },
+            error: function(error) {
+                $('#loading-spinner').hide();
+                console.log('Error:', error);
+            }
+        });
+    });
+});
+</script>
+{% endblock header %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    {% if sess %}
+        <h1 class="h2">Running session: {{ sess }}</h1>
+    {% endif %}
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
+    <div style="flex: 1; text-align: center;">
+        <select class="form-control form-select" id="datasetid" required>
+            <option selected="true" disabled="disabled" value="">Select Dataset</option>
+            {% for data in datasets %}
+            <option value="{{ data }}">{{ data }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div style="flex: 1; text-align: center;">
+        <select class="form-control form-select" id="caseid" required>
+            <option selected="true" disabled="disabled" value="">Select Case</option>
+        </select>
+    </div>
+
+    <!-- Dropdown -->
+    <div class="col-auto">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                Select Metric
+            </button>
+            <ul class="dropdown-menu scrollable-menu" aria-labelledby="dropdownMenuButton">
+            </ul>
+        </div>
+    </div>
+    
+     <!-- Dropdown -->    
+     <div class="col-auto">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="modelOption" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                Select Model
+            </button>
+            <ul class="dropdown-menu scrollable-menu" aria-labelledby="dropdownMenuButton">
+            </ul>
+        </div>
+    </div>
+    
+    <!-- <a href="{{ url_for('/dicom/') }}"></a> -->
+    <div class="col-auto">
+        <button type="button" class="btn btn-primary mb-3" id="generateButton" disabled>Generate</button>
+    </div>
+</div>
+
+<!-- Loading spinner -->
+<button id="loading-spinner" style="display:none; text-align:center;" class="btn btn-primary" type="button">
+    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    Loading...
+  </button>
+
+<!-- <div class="card" id="collapseCard">
+    <div class="card-header">
+        Voxel Variability
+    </div>
+    <div class="card-body">
+        <div class="row" id="plotly-figure">
+        </div>
+    </div>
+</div> -->
+
+<!-- <div class="accordion" id="accordionExample">
+</div> -->
+
+<div class="accordion" id="accordionExample" style="display: none;">
+
+    <div class="accordion-item" id="imageItem" style="display: none;">
+        <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                Volume
+            </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                <div class="card-body">
+                    <div class="row" id="plotly-figure-image">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item" id="filterItem" style="display: none;">
+        <h2 class="accordion-header" id="headingOne">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseOne">
+                Sobel Filter
+            </button>
+        </h2>
+        <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                <div class="card-body">
+                    <div class="row" id="plotly-figure-filter">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item" id="empItem" style="display: none;">
+        <h2 class="accordion-header" id="headingTwo">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseTwo">
+                Emphysema Map
+            </button>
+        </h2>
+        <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+            <div class="accordion-body">
+                <div class="card-body">
+                    <div class="row" id="plotly-figure-emp">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="accordion" id="accordionExample" style="display: none;">
+    
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingOne" style="border: none;">
+        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          Sobel Filter
+        </button>
+      </h2>
+      <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+        <div class="accordion-body">
+            <div class="card-body">
+                <div class="row" id="plotly-figure">
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+
+</div> -->
+
+{% endblock content %}

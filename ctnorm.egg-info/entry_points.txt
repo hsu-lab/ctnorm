@@ -1,3 +1,4 @@
 [console_scripts]
 ctnorm = ctnorm.main:main
+ctnorm-webapp = ctflask.app:run_server
 

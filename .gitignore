@@ -7,6 +7,7 @@ utils_tmp/
 write_config.py
 *.sh
 *.pth
+images/
 run_docker.sh
 config_test.yaml
 config_v1.yaml

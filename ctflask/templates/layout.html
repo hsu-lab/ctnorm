@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>CTNorm Dashboard</title>
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/dashboard/">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">    
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='dashboard.css') }}" rel="stylesheet">
+    <style>
+    .accordion-button:focus {
+        box-shadow: none;
+    }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  </head>
+  <body>
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6" href="#"><span data-feather="layers" class="align-text-bottom"></span>&nbsp;&nbsp;CTNorm</a>
+        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        {% block header %}{% endblock header %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Select the card and the link elements
+            const card = document.querySelector('#data-card');
+            const link = document.querySelector('#data-char-link');
+    
+            // Add 'active' class when the card is shown
+            card.addEventListener('shown.bs.collapse', function () {
+                link.classList.add('active');
+            });
+    
+            // Remove 'active' class when the card is hidden
+            card.addEventListener('hidden.bs.collapse', function () {
+                link.classList.remove('active');
+            });
+        });
+    </script>
+
+    </header>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3 sidebar-sticky">
+
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted text-uppercase">
+                <span>Modules</span>
+                <a class="link-secondary" href="#" aria-label="Add a new report">
+                    <span data-feather="hard-drive" class="align-text-bottom" style="{% if session.get('user') %} color:green; {% endif %}"></span>
+                  </a>
+                </h6>
+                
+                <!--  -->
+                <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if active_c %} active {% endif %}" aria-current="page" href="#" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#data-card" 
+                    id="data-char-link">
+                     <span data-feather="bar-chart-2" class="align-text-bottom"></span>
+                     Data Characterization
+                 </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if active_p %} active {% endif %}" href="{{ url_for('load_preprocessing') }}" style="">
+                    <span data-feather="tool" class="align-text-bottom"></span>
+                    Data Harmonization
+                    </a>
+                </li>
+                </ul>
+                <ul class="nav flex-column mb-2">
+                <li class="nav-item">
+                    <a class="nav-link {% if active_link %} active {% endif %}" href="#" style="">
+                    <span data-feather="file-text" class="align-text-bottom"></span>
+                    Robustness Analysis
+                    </a>
+                </li>
+                </ul>
+
+            </div>
+            </nav>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            {% block content %}{% endblock content %}
+            </main>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='bootstrap.bundle.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js" integrity="sha384-uO3SXW5IuS1ZpFPKugNNWqTZRRglnUJK6UAZ/gxOX80nxEkN9NcGZTftn6RzhGWE" crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js" integrity="sha384-zNy6FEbO50N+Cg5wap8IKA4M/ZnLJgzc6w2NqACZaK0u0FXfOWRRJOnQtpZun8ha" crossorigin="anonymous"></script><script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+  </body>
+</html>

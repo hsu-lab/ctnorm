@@ -17,6 +17,7 @@ setup(
     entry_points={
         "console_scripts": [
             "ctnorm=ctnorm.main:main",  # Allows running `ctnorm --config config.yaml`
+            "ctnorm-webapp=ctflask.app:run_server",  # ✅ New CLI command to start Flask
         ],
     },
     include_package_data=True,  # Includes non-Python files like config.yaml if specified in MANIFEST.in

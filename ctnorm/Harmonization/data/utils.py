@@ -19,19 +19,22 @@ def _check_transpose(vol):
         raise ValueError(f"Unexpected data shape: {vol.shape}. Unable to determine the correct transpose.")
     return vol
 
-def _get_pixels_hu(scans):
+def _get_pixels_hu(scans, apply_lut):
     image = np.stack([s.pixel_array for s in scans])
     image = image.astype(np.int16)
-    image[image == -2000] = 0
-    intercept = scans[0].RescaleIntercept
-    slope = scans[0].RescaleSlope
-    if slope != 1:
-        image = slope * image.astype(np.float64)
-        image = image.astype(np.int16)
-    image += np.int16(intercept)
-    return np.array(image, dtype=np.int16)
+    if apply_lut:
+        image[image == -2000] = 0
+        intercept = scans[0].RescaleIntercept
+        slope = scans[0].RescaleSlope
+        if slope != 1:
+            image = slope * image.astype(np.float64)
+            image = image.astype(np.int16)
+        image += np.int16(intercept)
+        return np.array(image, dtype=np.int16)
+    else:
+        return image
 
-def read_data(vol_pth, ext):
+def read_data(vol_pth, ext, apply_lut_for_dcm=True):
     if ext == 'nii' or ext == 'nii.gz':
         vol_pth = vol_path + '.nii.gz'
         data = nib.load(vol_pth)
@@ -60,7 +63,7 @@ def read_data(vol_pth, ext):
                 z_start = float(metadata_only.ImagePositionPatient[2])  # Starting Z position
                 z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position (top-bottom/bottom-top)
                 """
-        data = _get_pixels_hu(slices)
+        data = _get_pixels_hu(slices, apply_lut_for_dcm)
         z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
         z_start = slices[0].ImagePositionPatient[2]
         affine_info, header_info = np.eye(4), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}

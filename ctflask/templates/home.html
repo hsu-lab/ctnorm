@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+
+{% block header %}
+{% if session.get('user') %}
+    <form action="{{ url_for('reset_sess') }}" method="GET" class="row g-2 align-items-center">
+        <div class="col-auto nav-item">
+            <button 
+                class="btn btn-primary px-3" 
+                type="submit"
+            >
+                Reset Session
+            </button>
+        </div>
+    </form>
+
+{% else %}
+    <form action="{{ url_for('load_sess') }}" method="POST" class="row g-2 align-items-center">
+        <div class="col">
+            <input 
+                class="form-control form-control-dark w-100 rounded-0 border-0" 
+                id="session-number" 
+                list="session-options"
+                type="text" 
+                name="session_number" 
+                placeholder="Session Name" 
+                aria-label="Search" 
+                required
+            >
+            <datalist id="session-options">
+                {% for session in session_list %}
+                    <option value="{{ session.name }}">{{ session.name }}</option>
+                {% endfor %}
+            </datalist>
+        </div>
+        <div class="col-auto nav-item">
+            <button 
+                class="btn btn-primary px-3" 
+                type="submit"
+            >
+                Load Session
+            </button>
+        </div>
+    </form>
+{% endif %}
+{% endblock header %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    {% if session.get('user') %}
+        <h1 class="h2">Running session: {{ session.get('user') }}</h1>
+    {% else %}
+        <h1 class="h2">Sessions</h1>
+    {% endif %}
+</div>
+
+<div class="container mt-5">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Session Name</th>
+                <th>Status</th>
+                <th>Start Time</th>
+                <th>Failed Modules</th>
+                <th>Error Messages</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for session in session_list %}
+            <tr>
+                <td>{{ session.name }}</td>
+                <td>
+                    {% if session.status == "completed" %}
+                        <span class="badge bg-success">{{ session.status }}</span>
+                    {% elif session.status == "running" %}
+                        <span class="badge bg-warning">{{ session.status }}</span>
+                    {% elif session.status == "failed" %}
+                        <span class="badge bg-danger">{{ session.status }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Unknown</span>
+                    {% endif %}
+                </td>
+                <td>{{ session.timestamp }}</td>
+                <td>
+                    {% if session.status == "failed" %}
+                        {% for failure in session.failed_modules %}
+                            <span class="text-danger">{{ failure.module }}</span><br>
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if session.status == "failed" %}
+                        {% for failure in session.failed_modules %}
+                            <span class="text-danger">{{ failure.error }}</span><br>
+                        {% endfor %}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if session.status == "completed" %}
+                    <form method="POST" action="{{ url_for('load_sess') }}">
+                        <input type="hidden" name="session_number" value="{{ session.name }}">
+                        <button type="submit" class="btn btn-primary">Start</button>
+                    </form>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>Unavailable</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock content %}

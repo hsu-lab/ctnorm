@@ -24,6 +24,8 @@ Harmonization:
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
+    - name: WGAN
+      pretrained_G: "./pretrained_weights/WGAN/latestG-1-1.pth"
   param:
     tile_xy: 512
     tile_z: 32

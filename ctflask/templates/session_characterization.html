@@ -1,0 +1,177 @@
+{% extends "layout.html" %}
+
+{% block header %}
+<form action="{{ url_for('reset_sess') }}" method="GET" class="row g-2 align-items-center">
+    <div class="col-auto nav-item">
+        <button 
+            class="btn btn-primary px-3" 
+            type="submit"
+        >
+            Reset Session
+        </button>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function () {
+        // Handle Visualize Button click (AJAX request)
+        $('#submit-feature').click(function () {
+            // Collect selected features from checkboxes
+            var selectedFeatures = [];
+            $('#feature-checkboxes input:checked').each(function () {
+                selectedFeatures.push($(this).val());
+            });
+
+            // Ensure at least one feature is selected
+            if (selectedFeatures.length === 0) {
+                alert('Please select at least one feature to visualize!');
+                return;
+            }
+
+            // Disable the button and show spinner
+            const visualizeButton = $('#submit-feature');
+            visualizeButton.hide(); // Hide the Visualize button
+            const spinnerButton = $('#loading-spinner');
+            spinnerButton.show(); // Show the spinner button
+
+            // Prepare the data to send via AJAX
+            var data = {
+                'feature_names': selectedFeatures
+            };
+
+            // Send AJAX request to get Plotly figures
+            $.ajax({
+                url: '/read-feature-multiple',  // Flask route to handle the request
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (response) {
+                    // Check for errors in the response
+                    if (response.error) {
+                        alert(response.error);
+                        return;
+                    }
+
+                    // Clear any previous plots
+                    $('#scatter-plot').empty();
+
+                    // Render each Plotly figure
+                    response.plots.forEach((plotHtml) => {
+                        $('#scatter-plot').append(plotHtml);
+                    });
+
+                    $('#rad-container').show();
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while generating the scatter plots. Please try again.');
+                },
+                complete: function () {
+                    // Revert button state
+                    spinnerButton.hide(); // Hide the spinner
+                    visualizeButton.show(); // Show the Visualize button
+                }
+            });
+        });
+    });
+</script>
+
+
+{% endblock header %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    {% if sess %}
+        <h1 class="h2">Running session: {{ sess }}</h1>
+    {% endif %}
+</div>
+
+<div class="card col-md-6">
+    <h5 class="card-header">Radiomic Feature Visualization</h5>
+    <div class="card-body">
+        <form id="dataset-feature-form">    
+            <!-- Features Section -->
+            <div class="mb-3">
+                <label class="form-label">Select Features:</label>
+                <div id="feature-checkboxes" class="row">
+                    {% if param.feature_names %}
+                        {% for feature in param.feature_names %}
+                            <div class="col-3"> <!-- Dividing into 4 columns -->
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="feature-{{ loop.index }}" value="{{ feature }}">
+                                    <label class="form-check-label" for="feature-{{ loop.index }}">{{ feature }}</label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No features available</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Submit Button -->
+            <button type="button" class="btn btn-primary" id="submit-feature">Visualize</button>
+        </form>
+
+        <button id="loading-spinner" style="display:none; text-align:center;" class="btn btn-primary" type="button">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Loading...
+        </button>
+
+        <!-- Plot Display -->
+        <div id="rad-container" class="mt-4" style="display: none;">
+            <div id="scatter-plot"></div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<hr>
+
+<div class="card-body">
+    <div class="row g-0">
+        <!-- First column for histogram -->
+        <div class="col-md-6">
+            <div class="container">
+                <h4>Histogram</h4>
+                <img src="{{ url_for('static', filename='images/histogram.png') }}" alt="Histogram of 4 Overlapping Distributions" width="600">
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h4>Manufacturers</h4>
+            <img src="{{ url_for('static', filename='images/manufacturer.png') }}" alt="Manufacturers" width="600">
+        </div>
+
+        <!-- Second column for boxplot -->
+        <div class="col-md-6">
+            <h4>Signal to Noise</h4>
+            <img src="{{ url_for('static', filename='images/snr.png') }}" alt="Signal to Noise" width="600">
+        </div>
+
+        <!-- Second column for boxplot -->
+        <div class="col-md-6">
+            <h4>Slice Thickness</h4>
+            <img src="{{ url_for('static', filename='images/slice_thickness.png') }}" alt="Slice Thickness" width="600">
+        </div>
+
+        <!-- Second column for boxplot -->
+        <div class="col-md-6">
+            <h4>Skewness</h4>
+            <img src="{{ url_for('static', filename='images/skewness.png') }}" alt="Signal to Noise" width="600">
+        </div>
+
+    </div>
+</div>
+
+
+
+
+
+  
+
+
+
+
+{% endblock content %}
