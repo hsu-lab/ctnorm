@@ -8,7 +8,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
-from .helpers import process_nifti_file
+from .helpers import *
 import pandas as pd
 from multiprocessing import Pool
 import nibabel as nib
@@ -25,15 +25,12 @@ external_stylesheets = [dbc.themes.BOOTSTRAP]
 dash_app = dash.Dash(__name__, server=app, url_base_pathname='/dicom/', external_stylesheets=external_stylesheets)
 dash_app.layout = html.Div(id="dynamic-content")
 
-# Run the app
-if __name__ == '__main__':
-    app.run_server(debug=True)
-
 
 @app.route("/reset", methods=["GET"])
 def reset_sess():
     session.pop("user", None)
     return redirect(url_for("home"))  # Redirect back to home if accessed via GET
+
 
 @app.route("/")
 def home():
@@ -81,28 +78,31 @@ def load_sess():
             return redirect(url_for("home"))  # Redirect to home with error message
         else:
             session["user"] = session_number
-            """
-            # Handles Radiomic Features Section
-            FEATURE_CSV_PATH = os.path.join(ALL_SESSIONS, session_number, 'characterization', 'rad_feat.csv')
-            if os.path.exists(FEATURE_CSV_PATH):
-                feature_names = pd.read_csv(FEATURE_CSV_PATH).columns.tolist()[1:]  # Exclude the first column (e.g., 'Dataset')
-            else:
-                feature_names = []
-            return render_template(
-                "session_characterization.html",
-                active_c=True,
-                sess=session_number,
-                param={'feature_names': feature_names}
-            )
-            """
-            # Load the harmonization visualization for now (should go to characterization first)
-            INFO = os.path.join(session_base_path, session["user"], 'Harmonization')
-            available_d = os.listdir(INFO)
-            return render_template("session_preprocessing.html", active_p=True, datasets=available_d, sess=session["user"])
+            return load_char() # Load Characterization module by default
     else:
         # if session.get("user"):
         #     return render_template("session_characterization.html", sess=session["user"])
         return redirect(url_for("home"))  # Redirect back to home if accessed via GET
+
+
+@app.route("/load_char-p", methods=["GET", "POST"])
+def load_char():
+    if session.get("user"):
+        # Load the harmonization visualization for now (should go to characterization first)
+        session_base_path = app.config.get("SESSION_FOLDER")
+        INFO = os.path.join(session_base_path, session["user"])
+        figures, avail_feat = plot_characterization(INFO)
+        rad_key = next(iter(avail_feat), None)  # Returns None if dictionary is empty
+        if rad_key:
+            rad_key = avail_feat[rad_key]['feat_names']
+        return render_template(
+            "session_characterization.html",
+            active_c=True,
+            sess=session["user"],
+            figures=figures,
+            param={'feature_names': rad_key}
+        )
+    return redirect(url_for("home"))  # Redirect back to home if accessed via GET
 
 
 @app.route('/submit-dataset', methods=['GET', 'POST'])
@@ -135,6 +135,8 @@ def handle_dataset_submission():
 @app.route("/load_session-p", methods=["GET", "POST"])
 def load_preprocessing():
     if session.get("user"):
+        # Load the harmonization visualization for now (should go to characterization first)
+        session_base_path = app.config.get("SESSION_FOLDER")
         INFO = os.path.join(session_base_path, session["user"], 'Harmonization')
         available_d = os.listdir(INFO)
         return render_template("session_preprocessing.html", active_p=True, datasets=available_d, sess=session["user"])
@@ -156,21 +158,20 @@ def handle_preprocessing():
             _, _, img = read_data(case, ext='dcm', apply_lut_for_dcm=False)
 
             slicer = VolumeSlicer(dash_app, img, axis=0, thumbnail=False)
-            slicer.graph.figure.update_layout(plot_bgcolor="rgb(0, 0, 0)")  # ✅ Removed dragmode
-            slicer.graph.config.update(modeBarButtonsToAdd=[])  # ✅ No extra drawing buttons
+            slicer.graph.figure.update_layout(plot_bgcolor="rgb(0, 0, 0)") 
+            slicer.graph.config.update(modeBarButtonsToAdd=[])
 
-            # ✅ Hide numbers in slider
             slicer.slider.marks = None  
             slicer.slider.tooltip = {"always_visible": False}  
 
             slicers.append((slicer_name, slicer))
 
-        # ✅ Create Cards (3 per row)
+        # Create Cards (3 per row)
         cards = [
             dbc.Row([
                 dbc.Col(
                     dbc.Card([
-                        dbc.CardHeader(name, className="text-center"),  # ✅ Centered title
+                        dbc.CardHeader(name, className="text-center"),  # Centered title
                         dbc.CardBody([
                             slicer.graph,  
                             html.Div(style={"margin-top": "15px"}), 
@@ -183,9 +184,8 @@ def handle_preprocessing():
             for i in range(0, len(slicers), 3)
         ]
 
-        # ✅ Update Dash Layout Dynamically
+        # Update Dash Layout Dynamically
         dash_app.layout = html.Div(dbc.Container(cards, fluid=True))
-
         return jsonify({'status': 'success', 'message': 'Dashboard updated successfully'})
 
 

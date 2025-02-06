@@ -241,11 +241,19 @@ ctnorm-webapp --port <port_number> --session-out <path_to_session_folder>
 * *<port_number>*: Specify the **port exposed in the Docker container**. This must match the port defined when running Docker (**Step 2: 3️⃣ Running Docker in interactive mode**).
 * *<path_to_session_folder>*: Provide the **path** to the folder where all session outputs are stored. This should be the same session directory used when running the CTNorm Toolkit.
 
-> The Flask application displays the status of all sessions. Sessions that are complete can be **started**.  
-Currently, it will **directly navigate** to the Harmonization page.
+Accessing the Web App on a Local Machine at:
+```bash
+http://localhost:<port_number>
+```
+Accessing the Web App on a Remote Machine at:
+```bash
+http://<remote_server_ip>:<port_number>
+```
 
-🚨 **Popup Blocker Warning:**  
-The image viewer opens in a **popup window**. Some browsers may block popups by default. If you see a **popup blocked notification**, allow it to ensure the viewer opens correctly.
+> The Flask application displays the status of all sessions. Sessions that are complete can be **started**. Currently, only **Characterization** and **Harmonization** outputs can be visualized.
+
+🚨 **Popup Blocker Warning for Harmonization Viewer:**  
+The image viewer from the **Harmonization** tab opens in a **popup window**. Some browsers may block popups by default. If you see a **popup blocked notification**, allow it to ensure the viewer opens correctly.
 
 🚧 **Work in Progress** 🚧  
 More features coming soon!

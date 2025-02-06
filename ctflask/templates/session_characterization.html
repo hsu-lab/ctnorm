@@ -75,8 +75,6 @@
         });
     });
 </script>
-
-
 {% endblock header %}
 
 {% block content %}
@@ -86,92 +84,100 @@
     {% endif %}
 </div>
 
-<div class="card col-md-6">
-    <h5 class="card-header">Radiomic Feature Visualization</h5>
-    <div class="card-body">
-        <form id="dataset-feature-form">    
-            <!-- Features Section -->
-            <div class="mb-3">
-                <label class="form-label">Select Features:</label>
-                <div id="feature-checkboxes" class="row">
-                    {% if param.feature_names %}
-                        {% for feature in param.feature_names %}
-                            <div class="col-3"> <!-- Dividing into 4 columns -->
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="feature-{{ loop.index }}" value="{{ feature }}">
-                                    <label class="form-check-label" for="feature-{{ loop.index }}">{{ feature }}</label>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <p>No features available</p>
-                    {% endif %}
+<div class="container mt-4">
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="analysisTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="voxel-tab" data-bs-toggle="tab" data-bs-target="#voxel" type="button" role="tab">Voxel-Level Analysis</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab">Metadata-Level Analysis</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="radiomics-tab" data-bs-toggle="tab" data-bs-target="#radiomics" type="button" role="tab">Radiomic Feature Visualization</button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="analysisTabsContent">
+        <!-- Voxel-Level Analysis -->
+        <div class="tab-pane fade show active" id="voxel" role="tabpanel">
+            <h2 class="mt-3">Intensity Distribution</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div>{{ figures['histogram'] | safe if figures else 'No data available' }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div>{{ figures['kde'] | safe if figures }}</div>
                 </div>
             </div>
-            <!-- Submit Button -->
-            <button type="button" class="btn btn-primary" id="submit-feature">Visualize</button>
-        </form>
 
-        <button id="loading-spinner" style="display:none; text-align:center;" class="btn btn-primary" type="button">
-            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            Loading...
-        </button>
-
-        <!-- Plot Display -->
-        <div id="rad-container" class="mt-4" style="display: none;">
-            <div id="scatter-plot"></div>
-        </div>
-    </div>
-</div>
-
-
-
-
-<hr>
-
-<div class="card-body">
-    <div class="row g-0">
-        <!-- First column for histogram -->
-        <div class="col-md-6">
-            <div class="container">
-                <h4>Histogram</h4>
-                <img src="{{ url_for('static', filename='images/histogram.png') }}" alt="Histogram of 4 Overlapping Distributions" width="600">
+            <h2 class="mt-4">Statistical Properties</h2>
+            <div class="row">
+                <div class="col-md-6">
+                    <div>{{ figures['skewness'] | safe if figures else 'No data available' }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div>{{ figures['kurtosis'] | safe if figures }}</div>
+                </div>
             </div>
         </div>
 
-        <div class="col-md-6">
-            <h4>Manufacturers</h4>
-            <img src="{{ url_for('static', filename='images/manufacturer.png') }}" alt="Manufacturers" width="600">
+        <!-- Metadata-Level Analysis -->
+        <div class="tab-pane fade" id="metadata" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div>{{ figures['manufacturer'] | safe if figures else 'No data available' }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div>{{ figures['convolution_kernel'] | safe if figures }}</div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div>{{ figures['slice_thickness'] | safe if figures }}</div>
+                </div>
+            </div>
         </div>
 
-        <!-- Second column for boxplot -->
-        <div class="col-md-6">
-            <h4>Signal to Noise</h4>
-            <img src="{{ url_for('static', filename='images/snr.png') }}" alt="Signal to Noise" width="600">
+        <!-- Radiomic Feature Visualization -->
+        <div class="tab-pane fade" id="radiomics" role="tabpanel">
+            <div class="card col-md-12">
+                <h5 class="card-header">Radiomic Feature Visualization</h5>
+                <div class="card-body">
+                    <form id="dataset-feature-form">    
+                        <!-- Features Section -->
+                        <div class="mb-3">
+                            <!-- <label class="form-label">Select Features:</label> -->
+                            <div id="feature-checkboxes" class="row">
+                                {% if param.feature_names %}
+                                <label class="form-label">Select Features:</label>
+                                    {% for feature in param.feature_names %}
+                                        <div class="col-3"> 
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="feature-{{ loop.index }}" value="{{ feature }}">
+                                                <label class="form-check-label" for="feature-{{ loop.index }}">{{ feature }}</label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>No features available</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if param.feature_names %}
+                        <button type="button" class="btn btn-primary" id="submit-feature">Visualize</button>
+                        {% endif %}
+                    </form>
+                    <button id="loading-spinner" style="display:none; text-align:center;" class="btn btn-primary" type="button">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </button>
+                    <div id="rad-container" class="mt-4" style="display: none;">
+                        <div id="scatter-plot"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <!-- Second column for boxplot -->
-        <div class="col-md-6">
-            <h4>Slice Thickness</h4>
-            <img src="{{ url_for('static', filename='images/slice_thickness.png') }}" alt="Slice Thickness" width="600">
-        </div>
-
-        <!-- Second column for boxplot -->
-        <div class="col-md-6">
-            <h4>Skewness</h4>
-            <img src="{{ url_for('static', filename='images/skewness.png') }}" alt="Signal to Noise" width="600">
-        </div>
-
     </div>
 </div>
-
-
-
-
-
-  
-
-
-
-
 {% endblock content %}
