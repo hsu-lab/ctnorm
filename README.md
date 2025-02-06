@@ -231,7 +231,7 @@ ctnorm --config config.yaml
 ## 🌐 Launching a Web Server
 
 CTNorm also offers a user-friendly interface to visualize the outputs of each session.<br>
-🚨 **Note:** **Currently, only the raw Harmonization output can be visualized. Support for other module outputs and features will be added soon!!**
+🚨 **Note:** **Currently, only the Characterization and Harmonization output can be visualized. Support for other module outputs and features will be added soon!!**
 
 - To launch the app:
 ```bash
@@ -250,7 +250,7 @@ Accessing the Web App on a Remote Machine at:
 http://<remote_server_ip>:<port_number>
 ```
 
-> The Flask application displays the status of all sessions. Sessions that are complete can be **started**. Currently, only **Characterization** and **Harmonization** outputs can be visualized.
+> The Flask application displays the status of all sessions. Sessions that are complete can be **started**.
 
 🚨 **Popup Blocker Warning for Harmonization Viewer:**  
 The image viewer from the **Harmonization** tab opens in a **popup window**. Some browsers may block popups by default. If you see a **popup blocked notification**, allow it to ensure the viewer opens correctly.
