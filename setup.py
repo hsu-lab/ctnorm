@@ -1,9 +1,8 @@
 from setuptools import setup, find_packages
 
 
-# Read dependencies from requirements.txt
 def read_requirements():
-    with open("./requirements.txt") as f:
+    with open("./req_base.txt") as f:
         return [line.strip() for line in f if line.strip() and not line.startswith("#")]
 
 setup(
@@ -17,7 +16,7 @@ setup(
     entry_points={
         "console_scripts": [
             "ctnorm=ctnorm.main:main",  # Allows running `ctnorm --config config.yaml`
-            "ctnorm-webapp=ctflask.app:run_server",  # ✅ New CLI command to start Flask
+            "ctnorm-webapp=ctflask.app:run_server",  # CLI command to start Flask
         ],
     },
     include_package_data=True,  # Includes non-Python files like config.yaml if specified in MANIFEST.in
