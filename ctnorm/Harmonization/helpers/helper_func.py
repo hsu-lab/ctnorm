@@ -48,7 +48,7 @@ def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path
 """
 SUPPORTS '.nii.gz' and '.dcm' as fileout
 """
-def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=None, target_scale=None):
+def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=None, target_scale=None, reorient=True):
     if out_type == '.nii.gz':
         if isinstance(affine_in, torch.Tensor):
             if affine_in.dim() == 3 and affine_in.shape[0] == 1:
@@ -62,6 +62,9 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         os.makedirs(output_folder, exist_ok=True)
         out_f = os.path.join(output_folder, f_name+out_type)
         nii_to_save = nib.Nifti1Image(data, affine=affine_in)
+        if reorient:
+            from .image_reorientation import reorient_image
+            nii_to_save = reorient_image(nii_to_save)
         nib.save(nii_to_save, out_f)
 
     elif out_type == '.dcm':

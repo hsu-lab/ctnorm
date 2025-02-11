@@ -172,4 +172,3 @@ def main(config, global_logger, session_path):
                         if metrics:
                             helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, data['uid'][0]), metrics_to_c=metrics, f_name='{}--{}'.format(model['name'], data['uid'][0]), affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
                         bar()
-                        break
