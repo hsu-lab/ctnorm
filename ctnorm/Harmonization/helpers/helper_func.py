@@ -43,9 +43,11 @@ def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path
     ds.SliceLocation = abs(z_position) if z_position is not None else None
     # Save the updated DICOM file
     ds.save_as(output_path)
-    # print(f"DICOM file saved at {output_path}")
 
 
+"""
+SUPPORTS '.nii.gz' and '.dcm' as fileout
+"""
 def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=None, target_scale=None):
     if out_type == '.nii.gz':
         if isinstance(affine_in, torch.Tensor):
