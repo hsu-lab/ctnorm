@@ -112,7 +112,6 @@ def save_metric(data, out_type, out_dir, metrics_to_c, f_name, affine_in, target
             out_fname = os.path.join(output_folder, f_name+'.{}'.format(out_type))
             vol_map = _apply_filters(data)
             vol_map = vol_map.transpose(1,2,0)
-            print(vol_map.shape)
             nii_to_save = nib.Nifti1Image(vol_map , affine=affine_in)
             nib.save(nii_to_save, out_fname)
         elif metric.lower() == 'emphysema':

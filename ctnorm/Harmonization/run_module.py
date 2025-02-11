@@ -159,9 +159,6 @@ def main(config, global_logger, session_path):
 
                 with alive_bar(total_iterations, title='Processing files') as bar:
                     for i, data in enumerate(test_loader):
-                        if i == 0:
-                            continue
-
                         need_HR = False if test_loader.dataset.opt.get('dataroot_HR') is None else True
                         dl_model.feed_test_data(data, need_HR=need_HR)
                         dl_model.test(data)

@@ -28,9 +28,7 @@ Harmonization:
     tile_z: 32
     z_overlap: 4
     gpu_id: 0
-    out_dtype: ".nii.gz"
-  metrics:
-    - 'Sobel'
+    out_dtype: ".dcm"
 
 Robustness:
   input_datasets:
