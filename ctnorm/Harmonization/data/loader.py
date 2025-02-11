@@ -13,8 +13,8 @@ class Loader(data.Dataset):
         # Set up path to data I/O
         self.data_type = opt['in_dtype']
         self.in_uids = opt['in_uids_names']
-        self.tar_uids = opt.get('tar_uids_names', None)
-        self.mask_folder = opt.get('maskroot_path') # Currently not used!
+        self.tar_uids = opt.get('in_tar_names', None)
+        self.mask_uids = opt.get('in_masks_names', None)
         self.out_dir = opt['out']
         self.is_train = opt['is_train']
         # Define 3D patch size for training
@@ -38,6 +38,11 @@ class Loader(data.Dataset):
         if self.tar_uids:
             tar_uid = self.tar_uids[index]
             affine_tar, header_tar, tar_data = read_data(tar_uid, self.data_type)
+        
+        if self.mask_uids:
+            mask_uid = self.mask_uids[index]
+            # Not returning volume through dataloader to save memory
+            # affine_mask, header_maks, mask_data = read_data(mask_uid, '.nii.gz')
 
         if self.is_train and self.tar_uids:
             t, w, h = self.ps
@@ -65,6 +70,8 @@ class Loader(data.Dataset):
         if self.is_train:
             tar_data = self.ToTensor(tar_data, min_HU_clip=-1000., max_HU_clip=500., move_HU=1000.)
             out_dict['dataroot_HR'] = tar_data
+        if self.mask_uids:
+            out_dict['mask_root'] = mask_uid
         return out_dict
 
 

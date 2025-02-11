@@ -5,8 +5,24 @@ import pickle
 import numpy as np
 import torch
 import random
+from .image_reorientation import reorient_image
+import SimpleITK as sitk
+from radiomics import featureextractor
+import six
 from skimage import filters
 
+
+def _diagonal_matches(affine1, affine2, atol=1.0):
+    """
+    Check if the diagonal elements [0,0], [1,1], [2,2] of affine1 
+    match those of affine2 within the given tolerance.
+    Returns True if all three diagonal elements match within tolerance, 
+    False otherwise.
+    """
+    diag1 = np.array([affine1[0,0], affine1[1,1], affine1[2,2]], dtype=float)
+    diag2 = np.array([affine2[0,0], affine2[1,1], affine2[2,2]], dtype=float)
+    return np.allclose(diag1, diag2, rtol=0, atol=atol)
+    
 
 def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path, z_position, thickness=1.0):
     """
@@ -62,8 +78,8 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         os.makedirs(output_folder, exist_ok=True)
         out_f = os.path.join(output_folder, f_name+out_type)
         nii_to_save = nib.Nifti1Image(data, affine=affine_in)
+        # BY DEFAULT: WE REORIENT IMAGE AS DONE IN dicom2nifti LIBRARY
         if reorient:
-            from .image_reorientation import reorient_image
             nii_to_save = reorient_image(nii_to_save)
         nib.save(nii_to_save, out_f)
 
@@ -71,7 +87,7 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         output_folder = os.path.join(out_dir, m_type, f_name)
         os.makedirs(output_folder, exist_ok=True)
 
-        # Access directly
+        # Access metada directly - used for nonDL methods; i.e. BM3D
         if isinstance(meta, dict):
             dcm_metadata = meta['meta_data']
             z_start = meta['z_start']
@@ -100,39 +116,86 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         raise NotImplementedError('{} extension not yet supported!'.format(out_type))
 
 
-def save_metric(data, out_type, out_dir, metrics_to_c, f_name, affine_in, target_scale=None):
-    """Converts a PyTorch tensor to a NumPy array if needed."""
+def save_metric(data, out_type, out_dir, metrics_to_c, f_name, affine_in, target_scale=None, ext_utils=None):
+    """Converts a PyTorch affine tensor to a NumPy array if needed."""
     if isinstance(affine_in, torch.Tensor):  # Check if it's a tensor
         if affine_in.dim() == 3 and affine_in.shape[0] == 1:  # Shape [1, 4, 4]
             affine_in = affine_in.squeeze(0)  # Remove batch dimension → [4, 4]
         affine_in = affine_in.cpu().numpy()  # Convert to NumPy (ensures CPU conversion)
     if target_scale is not None:
         affine_in[2,2] = 1.0
-  
+
     for metric in metrics_to_c:
         if metric.lower() == 'sobel':
-            output_folder = os.path.join(out_dir, metric)
-            os.makedirs(output_folder, exist_ok=True)
-            out_fname = os.path.join(output_folder, f_name+'.{}'.format(out_type))
-            vol_map = _apply_filters(data)
-            vol_map = vol_map.transpose(1,2,0)
-            nii_to_save = nib.Nifti1Image(vol_map , affine=affine_in)
-            nib.save(nii_to_save, out_fname)
+            continue
+
         elif metric.lower() == 'emphysema':
             continue
+
+        elif metric.lower() == 'radiomic':
+            if ext_utils is None:
+                raise ValueError('ROI mask must be specified to extract radiomic features!')
+
+            # Only define once
+            if "extractor" not in globals():
+                global extractor
+                paramPath = './CT.yaml'
+                extractor = featureextractor.RadiomicsFeatureExtractor(paramPath)
+
+            # NOTE: This logic can be modified if output volume and mask has been validated to have same orientation
+            # even though the affine doesn't match
+            mask_f = nib.load(ext_utils['mask_root'][0]) # Assumes mask is in RAS
+            if _diagonal_matches(affine_in, mask_f.affine):
+                # Assumes orientation has been checked and OK!
+                nii_img = nib.Nifti1Image(data, affine=affine_in)
+                del data
+                pass
+            else:
+                # Reorients image to RAS; assuming masks is already in RAS
+                # NOTE: This logic can be skipped if orientation has been verified to match
+                data = np.transpose(data, (2,1,0))
+                nii_img = nib.Nifti1Image(data, affine=affine_in)
+                del data
+                nii_img = reorient_image(nii_img)
+
+            # Extract feature
+            image_sitk = _nifti_volume_to_sitk(nii_img, None, [-1000., 500.])
+            mask_sitk = _nifti_volume_to_sitk(mask_f, nii_img.affine, None)
+            feats = _get_radiomics(extractor, image_sitk, mask_sitk)
+            print('Features extracted!')
+            output_folder = os.path.join(out_dir, metric)
+            os.makedirs(output_folder, exist_ok=True)
         else:
             continue
 
 
-def _apply_filters(image_3d):
-    sobel_map = np.zeros_like(image_3d)
-    for z in range(image_3d.shape[0]):
-        slice_image = image_3d[z,:,:]
-        slice_min = slice_image.min()
-        slice_max = slice_image.max()
-        slice_normalized = (slice_image - slice_min) / (slice_max - slice_min)
-        sobel_map[z,:,:] = filters.sobel(slice_normalized)
-    return sobel_map
+def _get_radiomics(extractor, image, label):
+    feats = {}
+    featureVector = extractor.execute(image, label)
+    for (key, val) in six.iteritems(featureVector):
+        if key.startswith("original") or key.startswith("log") or key.startswith("wavelet") :
+            feats[key] = val
+    return feats
+
+
+def _nifti_volume_to_sitk(nifti_img, affine_in=None, clip=None):
+    data = nifti_img.get_fdata()
+    if clip:
+        data = np.clip(data, clip[0], clip[1]).astype(np.float32)  # Apply clipping
+    if affine_in is None:
+        affine = nifti_img.affine
+    else:
+        affine = affine_in
+    sitk_image = sitk.GetImageFromArray(data)
+    # Extract metadata from affine
+    spacing = np.abs(affine[:3, :3].diagonal())  # Extract voxel spacing
+    origin = affine[:3, 3]  # Extract image origin
+    direction = affine[:3, :3].flatten().tolist()  # Extract direction cosines
+    # Apply metadata to SimpleITK image
+    sitk_image.SetSpacing(tuple(spacing))
+    sitk_image.SetOrigin(tuple(origin))
+    sitk_image.SetDirection(direction)
+    return sitk_image
 
 
 """

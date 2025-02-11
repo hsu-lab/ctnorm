@@ -10,6 +10,7 @@ from alive_progress import alive_bar
 import sys
 import torch
 import math
+from joblib import Parallel, delayed
 
 
 def main(config, global_logger, session_path):
@@ -19,6 +20,7 @@ def main(config, global_logger, session_path):
     mode = config[current_mod]['mode']
     models_param = config[current_mod]['param']
     metrics = config[current_mod].get('metrics')
+    args = {}
 
     for model in models:
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -159,16 +161,43 @@ def main(config, global_logger, session_path):
 
                 with alive_bar(total_iterations, title='Processing files') as bar:
                     for i, data in enumerate(test_loader):
-                        # if i == 0:
-                        #     continue
-
                         need_HR = False if test_loader.dataset.opt.get('dataroot_HR') is None else True
                         dl_model.feed_test_data(data, need_HR=need_HR)
                         dl_model.test(data)
                         visuals = dl_model.get_current_visuals(data, need_HR=need_HR)
                         sr_vol = helper_func.tensor2img(visuals['SR'], out_type=np.int16)
                         # Save output
-                        helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume', f_name='{}--{}'.format(model['name'], data['uid'][0]), meta=None, affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
+                        helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume',
+                            f_name='{}--{}'.format(model['name'], data['uid'][0]), meta=None, affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
+                        # Setup paths to read once harmonization is finished running
                         if metrics:
-                            helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, data['uid'][0]), metrics_to_c=metrics, f_name='{}--{}'.format(model['name'], data['uid'][0]), affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
+                            if models_param['out_dtype'] == '.dcm':
+                                out_f_toread = os.path.join(out_d, data['uid'][0], 'Volume', '{}--{}')
+                            elif models_param['out_dtype'] == '.nii.gz':
+                                out_f_toread = os.path.join(out_d, data['uid'][0], 'Volume', '{}--{}.nii.gz'.format(model['name'], data['uid'][0]))
+                            else:
+                                raise NotImplementedError("Only '.dcm' and '.nii.gz' are supported at the moment!")
+                                
+                            if model['name'] not in args:
+                                args[model['name']] =  {}
+                            if dataset['name'] not in args[model['name']]:
+                                args[model['name']][dataset['name']] =  {'img_pth':[], 'mask_pth':[]}
+                            args[model['name']][dataset['name']]['img_pth'].append(out_f_toread)
+                            if 'mask_root' in data.keys():
+                                args[model['name']][dataset['name']]['mask_pth'].append(data['mask_root'][0])
                         bar()
+                        
+    if metrics:
+        # args = {k: v for k, v in data.items() if k != "dataroot_LR"}
+        # """
+        # Parallel(n_jobs=4)(delayed(helper_func.save_metric)(
+        #     sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, args['uid'][0]), 
+        #     metrics_to_c=metrics, f_name='{}--{}'.format(model['name'], args['uid'][0]), 
+        #     affine_in=args['affine_info'], target_scale=models_param.get('scale', None), 
+        #     ext_utils=args
+        # ) for _ in range(4))
+        # """
+        # # Default out for metrics is nifti
+        # helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, args['uid'][0]), metrics_to_c=metrics,
+        #     f_name='{}--{}'.format(model['name'], args['uid'][0]), affine_in=args['affine_info'], target_scale=models_param.get('scale', None), ext_utils=args)
+

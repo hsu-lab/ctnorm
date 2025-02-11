@@ -96,8 +96,8 @@ def _get_pixels_hu(scans, apply_lut=True):
 
 
 def read_data(vol_pth, ext, apply_lut_for_dcm=True):
-    if ext == 'nii' or ext == 'nii.gz':
-        vol_pth = vol_path + '.nii.gz'
+    if ext == '.nii' or ext == '.nii.gz':
+        vol_pth = vol_pth
         data = nib.load(vol_pth)
         affine_info, header_info = data.affine, {}
         data = _check_transpose(data.get_fdata())

@@ -40,17 +40,28 @@ Create Dataset object for dataloader
 def create_dataset(dataset_opt):
     from .loader import Loader as L
     if dataset_opt.get('in_uids'):
-        in_uids_list = read_csv(dataset_opt['in_uids'])['uids'].tolist()
-        in_uids_list = [in_uid.rstrip() for in_uid in in_uids_list]
-        dataset_opt['in_uids_names'] = sorted(in_uids_list, key=lambda x: os.path.basename(x))
+        in_df = read_csv(dataset_opt['in_uids'], required_columns=['uids'])
+        in_uids_list = in_df['uids'].tolist()
+        dataset_opt['in_uids_names'] = [in_uid.rstrip() for in_uid in in_uids_list]
+        # dataset_opt['in_uids_names'] = sorted(in_uids_list, key=lambda x: os.path.basename(x))
+        # Check if mask exists
+        if 'masks' in in_df.columns:
+            in_masks_list = in_df['masks'].tolist()
+            dataset_opt['in_masks_names'] = [in_uid.rstrip() for in_uid in in_masks_list]
+        # Check if target exists
+        if 'tar_uids' in in_df.columns:
+            in_tar_list = in_df['tar_uids'].tolist()
+            dataset_opt['in_tar_names'] = [in_uid.rstrip() for in_uid in in_tar_list]
     else:
         raise RuntimeError('CSV with path to input cases must be specified!')
+    """
     if dataset_opt.get('tar_uids'):
         tar_uid_list = read_csv(dataset_opt['tar_uids'])['uids'].tolist()
         tar_uid_list = [in_uid.rstrip() for in_uid in tar_uid_list]
         dataset_opt['tar_uids_names'] = sorted(tar_uid_list, key=lambda x: os.path.basename(x))
         # Ensure both in_uids and tar_uids have same path
         compare_in_tar(list1=dataset_opt['in_uids_names'], list2=dataset_opt['tar_uids_names'])
+    """
     dataset = L(dataset_opt)
     logger = logging.getLogger('base')
     logger.info('[{:s} - {:s}] is created.'.format(dataset.__class__.__name__,

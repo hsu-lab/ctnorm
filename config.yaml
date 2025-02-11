@@ -6,6 +6,10 @@ Datasets:
     in_uids: "./utils_tmp/csvs/totest_order.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
+  NLST-2:
+    in_uids: "./utils_tmp/csvs/totest_order.csv"
+    in_dtype: "dcm"
+    description: "National Lung Screening Trial dataset again"
 
 Modules:
   Characterization: false
@@ -20,6 +24,7 @@ Harmonization:
   mode: "test"
   input_datasets:
     - name: NLST
+    - name: NLST-2
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
@@ -29,6 +34,8 @@ Harmonization:
     z_overlap: 4
     gpu_id: 0
     out_dtype: ".nii.gz"
+  metrics:
+    - Radiomic
 
 Robustness:
   input_datasets:
