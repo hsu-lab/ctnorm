@@ -186,8 +186,9 @@ def main(config, global_logger, session_path):
                             if 'mask_root' in data.keys():
                                 args[model['name']][dataset['name']]['mask_pth'].append(data['mask_root'][0])
                         bar()
-                        
+
     if metrics:
+        pass
         # args = {k: v for k, v in data.items() if k != "dataroot_LR"}
         # """
         # Parallel(n_jobs=4)(delayed(helper_func.save_metric)(
