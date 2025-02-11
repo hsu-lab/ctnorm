@@ -124,12 +124,22 @@ def read_data(vol_pth, ext, apply_lut_for_dcm=True):
                 z_start = float(metadata_only.ImagePositionPatient[2])  # Starting Z position
                 z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position (top-bottom/bottom-top)
                 """
+        
+        # print(slices[0].ImagePositionPatient[2], slices[-1].ImagePositionPatient[2])
+        # for s in slices:
+        #     print(s.InstanceNumber, s.SliceLocation, s.ImagePositionPatient[2])
         sorted_slices = _sort_dicoms(slices)
+        # print(sorted_slices[0].ImagePositionPatient[2], sorted_slices[-1].ImagePositionPatient[2])
+
         data = _get_pixels_hu(sorted_slices, apply_lut_for_dcm)
         # z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
         # z_start = slices[0].ImagePositionPatient[2]
         z_sign = 1 if sorted_slices[-1].ImagePositionPatient[2] > sorted_slices[0].ImagePositionPatient[2] else -1
         z_start = sorted_slices[0].ImagePositionPatient[2]
+        # print('='*40)
+        # for s in sorted_slices:
+        #     print(s.InstanceNumber, s.SliceLocation, s.ImagePositionPatient[2])
+        # print('-'*40)
         affine_info, header_info = get_affine_matrix(sorted_slices), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
     else:
         raise ValueError('Unknown file format!... Expects only `.nii`, `.nii.gz`, or `.dcm`')

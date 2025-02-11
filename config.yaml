@@ -3,7 +3,7 @@ Global:
 
 Datasets:
   NLST:
-    in_uids: "./utils_tmp/csvs/nlst2mm_subset.csv"
+    in_uids: "./utils_tmp/csvs/totest_order.csv"
     in_dtype: "dcm"
     description: "National Lung Screening Trial dataset"
 

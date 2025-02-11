@@ -81,7 +81,6 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
                 dcm_metadata = loaded_metadata['meta_data']
             z_start = loaded_metadata['z_start']
             z_sign = loaded_metadata['z_sign']
-
         if target_scale is None:
             z_positions = [z_start + z_sign * i * dcm_metadata.SliceThickness for i in range(data.shape[0])]
             out_thickness = float(dcm_metadata.SliceThickness)
@@ -89,9 +88,11 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
             z_positions = [z_start + z_sign * i * 1.0 for i in range(data.shape[0])]
             out_thickness = 1.0
         
-        for i in range(data.shape[0]):
+        num_slices = data.shape[0]
+        for i in range(num_slices):
+            instance_number = num_slices - i
             slice_path = os.path.join(output_folder, f"slice_{i + 1:03d}.dcm")
-            create_minimum_dicom_header(data[i,:,:], i + 1, dcm_metadata, slice_path, z_positions[i], thickness=out_thickness)
+            create_minimum_dicom_header(data[i,:,:], instance_number, dcm_metadata, slice_path, z_positions[i], thickness=out_thickness)
     else:
         raise NotImplementedError('{} extension not yet supported!'.format(out_type))
 

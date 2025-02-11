@@ -159,6 +159,9 @@ def main(config, global_logger, session_path):
 
                 with alive_bar(total_iterations, title='Processing files') as bar:
                     for i, data in enumerate(test_loader):
+                        # if i == 0:
+                        #     continue
+
                         need_HR = False if test_loader.dataset.opt.get('dataroot_HR') is None else True
                         dl_model.feed_test_data(data, need_HR=need_HR)
                         dl_model.test(data)
@@ -169,3 +172,4 @@ def main(config, global_logger, session_path):
                         if metrics:
                             helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, data['uid'][0]), metrics_to_c=metrics, f_name='{}--{}'.format(model['name'], data['uid'][0]), affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
                         bar()
+                        break
