@@ -9,8 +9,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
 from .helpers import *
+import sys
 import pandas as pd
-from multiprocessing import Pool
+from dash.dependencies import Input, Output, State
 import nibabel as nib
 from dash_slicer import VolumeSlicer
 from ctnorm.Harmonization.data.utils import read_data
@@ -88,6 +89,7 @@ def load_sess():
 @app.route("/load_char-p", methods=["GET", "POST"])
 def load_char():
     if session.get("user"):
+        global avail_feat # Declare this as a session variable to be accessed by other function 
         # Load the harmonization visualization for now (should go to characterization first)
         session_base_path = app.config.get("SESSION_FOLDER")
         INFO = os.path.join(session_base_path, session["user"])
@@ -160,10 +162,8 @@ def handle_preprocessing():
             slicer = VolumeSlicer(dash_app, img, axis=0, thumbnail=False)
             slicer.graph.figure.update_layout(plot_bgcolor="rgb(0, 0, 0)") 
             slicer.graph.config.update(modeBarButtonsToAdd=[])
-
             slicer.slider.marks = None  
             slicer.slider.tooltip = {"always_visible": False}  
-
             slicers.append((slicer_name, slicer))
 
         # Create Cards (3 per row)
@@ -188,6 +188,20 @@ def handle_preprocessing():
         dash_app.layout = html.Div(dbc.Container(cards, fluid=True))
         return jsonify({'status': 'success', 'message': 'Dashboard updated successfully'})
 
+
+@app.route("/read-feature-multiple", methods=["POST"])
+def readfeature_multiple():
+    if request.method == "POST" and session.get("user"):
+        data = request.get_json()
+        feature_names = data.get('feature_names', [])  # Already cleaned feature names
+        print('Reading features:', feature_names)
+
+        if (not avail_feat) or (len(feature_names) == 0):
+            return jsonify({'status': 'failed', 'message': 'Radiomic features cannot be loaded!'})
+        figures = plot_radiomics(avail_feat, feature_names)
+        return jsonify({'status': 'success', 'plots': figures})
+    else:
+        return redirect(url_for("home"))
 
 
 def run_server():

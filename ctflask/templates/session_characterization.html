@@ -13,67 +13,72 @@
 </form>
 
 <script>
-    $(document).ready(function () {
-        // Handle Visualize Button click (AJAX request)
-        $('#submit-feature').click(function () {
-            // Collect selected features from checkboxes
-            var selectedFeatures = [];
-            $('#feature-checkboxes input:checked').each(function () {
-                selectedFeatures.push($(this).val());
-            });
+$(document).ready(function () {
+    $('#submit-feature').click(function () {
+        var selectedFeatures = [];
+        $('#feature-checkboxes input:checked').each(function () {
+            selectedFeatures.push($(this).val());
+        });
 
-            // Ensure at least one feature is selected
-            if (selectedFeatures.length === 0) {
-                alert('Please select at least one feature to visualize!');
-                return;
-            }
+        if (selectedFeatures.length === 0) {
+            alert('Please select at least one feature to visualize!');
+            return;
+        }
 
-            // Disable the button and show spinner
-            const visualizeButton = $('#submit-feature');
-            visualizeButton.hide(); // Hide the Visualize button
-            const spinnerButton = $('#loading-spinner');
-            spinnerButton.show(); // Show the spinner button
+        const visualizeButton = $('#submit-feature');
+        const spinnerButton = $('#loading-spinner');
+        visualizeButton.prop("disabled", true).hide();
+        spinnerButton.show();
 
-            // Prepare the data to send via AJAX
-            var data = {
-                'feature_names': selectedFeatures
-            };
+        var data = {
+            'feature_names': selectedFeatures
+        };
 
-            // Send AJAX request to get Plotly figures
-            $.ajax({
-                url: '/read-feature-multiple',  // Flask route to handle the request
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function (response) {
-                    // Check for errors in the response
-                    if (response.error) {
-                        alert(response.error);
-                        return;
+        $.ajax({
+            url: '/read-feature-multiple',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (response) {
+                if (!response || response.status !== 'success' || !response.plots || Object.keys(response.plots).length === 0) {
+                    alert('No plots were generated. Please check your selected features.');
+                    return;
+                }
+
+                $('#scatter-plot').empty();
+                let rowDiv = null;
+                let index = 0;
+
+                Object.entries(response.plots).forEach(([featureName, plotHtml]) => {
+                    if (index % 2 === 0) {
+                        rowDiv = $('<div class="row mt-3"></div>'); // Create a new row every two figures
+                        $('#scatter-plot').append(rowDiv);
                     }
 
-                    // Clear any previous plots
-                    $('#scatter-plot').empty();
+                    let plotContainer = `
+                        <div class="col-md-6">
+                            <div class="plot-container w-100">
+                                ${plotHtml}
+                            </div>
+                        </div>`;
 
-                    // Render each Plotly figure
-                    response.plots.forEach((plotHtml) => {
-                        $('#scatter-plot').append(plotHtml);
-                    });
+                    rowDiv.append(plotContainer);
+                    index++;
+                });
 
-                    $('#rad-container').show();
-                },
-                error: function (error) {
-                    console.error('Error:', error);
-                    alert('An error occurred while generating the scatter plots. Please try again.');
-                },
-                complete: function () {
-                    // Revert button state
-                    spinnerButton.hide(); // Hide the spinner
-                    visualizeButton.show(); // Show the Visualize button
-                }
-            });
+                $('#rad-container').show();
+            },
+            error: function (error) {
+                console.error('Error:', error);
+                alert('An error occurred while generating the scatter plots. Please try again.');
+            },
+            complete: function () {
+                spinnerButton.hide();
+                visualizeButton.prop("disabled", false).show();
+            }
         });
     });
+});
 </script>
 {% endblock header %}
 
@@ -101,7 +106,7 @@
     <div class="tab-content mt-3" id="analysisTabsContent">
         <!-- Voxel-Level Analysis -->
         <div class="tab-pane fade show active" id="voxel" role="tabpanel">
-            <h2 class="mt-3">Intensity Distribution</h2>
+            <h3 class="mt-3">Intensity Distribution</h3>
             <div class="row">
                 <div class="col-md-6">
                     <div>{{ figures['histogram'] | safe if figures else 'No data available' }}</div>
@@ -111,7 +116,7 @@
                 </div>
             </div>
 
-            <h2 class="mt-4">Statistical Properties</h2>
+            <h3 class="mt-4">Statistical Properties</h3>
             <div class="row">
                 <div class="col-md-6">
                     <div>{{ figures['skewness'] | safe if figures else 'No data available' }}</div>
@@ -119,11 +124,15 @@
                 <div class="col-md-6">
                     <div>{{ figures['kurtosis'] | safe if figures }}</div>
                 </div>
+                <div class="col-md-6">
+                    <div>{{ figures['snr'] | safe if figures }}</div>
+                </div>
             </div>
         </div>
 
         <!-- Metadata-Level Analysis -->
         <div class="tab-pane fade" id="metadata" role="tabpanel">
+            <h3 class="mt-3">Header Variability</h3>
             <div class="row">
                 <div class="col-md-6">
                     <div>{{ figures['manufacturer'] | safe if figures else 'No data available' }}</div>
@@ -171,12 +180,18 @@
                     <button id="loading-spinner" style="display:none; text-align:center;" class="btn btn-primary" type="button">
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         Loading...
-                    </button>
-                    <div id="rad-container" class="mt-4" style="display: none;">
-                        <div id="scatter-plot"></div>
-                    </div>
+                    </button>                    
                 </div>
             </div>
+
+
+            <div class="row" id="scatter-plot">
+            </div>
+            <!-- <div id="rad-container" class="mt-4" style="display: none;">
+                <div class="container-fluid">
+                    <div class="row" id="scatter-plot"></div>
+                </div>
+            </div> -->
         </div>
     </div>
 </div>

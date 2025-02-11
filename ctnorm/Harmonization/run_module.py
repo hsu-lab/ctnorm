@@ -18,6 +18,7 @@ def main(config, global_logger, session_path):
     models = config[current_mod]['models']
     mode = config[current_mod]['mode']
     models_param = config[current_mod]['param']
+    metrics = config[current_mod].get('metrics')
 
     for model in models:
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -158,11 +159,16 @@ def main(config, global_logger, session_path):
 
                 with alive_bar(total_iterations, title='Processing files') as bar:
                     for i, data in enumerate(test_loader):
+                        if i == 0:
+                            continue
+
                         need_HR = False if test_loader.dataset.opt.get('dataroot_HR') is None else True
                         dl_model.feed_test_data(data, need_HR=need_HR)
                         dl_model.test(data)
                         visuals = dl_model.get_current_visuals(data, need_HR=need_HR)
                         sr_vol = helper_func.tensor2img(visuals['SR'], out_type=np.int16)
                         # Save output
-                        helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume', f_name='{}--{}'.format(model['name'], data['uid'][0]), target_scale=models_param.get('scale', None))
+                        helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume', f_name='{}--{}'.format(model['name'], data['uid'][0]), meta=None, affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
+                        if metrics:
+                            helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, data['uid'][0]), metrics_to_c=metrics, f_name='{}--{}'.format(model['name'], data['uid'][0]), affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
                         bar()

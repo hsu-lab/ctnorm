@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import torch
 import random
+from skimage import filters
 
 
 def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path, z_position, thickness=1.0):
@@ -44,10 +45,24 @@ def create_minimum_dicom_header(pixel_array, slice_number, metadata, output_path
     ds.save_as(output_path)
     # print(f"DICOM file saved at {output_path}")
 
-def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, target_scale=None):
-    if out_type == 'nii.gz':
-        raise NotImplementedError('.nii.gz extension not yet supported!')
-    elif out_type == 'dcm':
+
+def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=None, target_scale=None):
+    if out_type == '.nii.gz':
+        if isinstance(affine_in, torch.Tensor):
+            if affine_in.dim() == 3 and affine_in.shape[0] == 1:
+                affine_in = affine_in.squeeze(0)
+            affine_in = affine_in.cpu().numpy()
+        if target_scale is not None:
+            affine_in[2,2] = 1.0
+        
+        data = np.transpose(data, (2,1,0)) # REQUIRED FOR RAS ALIGNMENT IN ITK
+        output_folder = os.path.join(out_dir, m_type)
+        os.makedirs(output_folder, exist_ok=True)
+        out_f = os.path.join(output_folder, f_name+out_type)
+        nii_to_save = nib.Nifti1Image(data, affine=affine_in)
+        nib.save(nii_to_save, out_f)
+
+    elif out_type == '.dcm':
         output_folder = os.path.join(out_dir, m_type, f_name)
         os.makedirs(output_folder, exist_ok=True)
 
@@ -67,11 +82,9 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, target_scale
 
         if target_scale is None:
             z_positions = [z_start + z_sign * i * dcm_metadata.SliceThickness for i in range(data.shape[0])]
-            # z_positions = [loaded_metadata['z_sign'] * (abs(loaded_metadata['z_start']) + i * 1.0) for i in range(data.shape[0])]
             out_thickness = float(dcm_metadata.SliceThickness)
         else:
             z_positions = [z_start + z_sign * i * 1.0 for i in range(data.shape[0])]
-            # z_positions = [loaded_metadata['z_sign'] * (abs(loaded_metadata['z_start']) + i * float(dcm_metadata.SliceThickness)) for i in range(data.shape[0])]
             out_thickness = 1.0
         
         for i in range(data.shape[0]):
@@ -79,6 +92,43 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, target_scale
             create_minimum_dicom_header(data[i,:,:], i + 1, dcm_metadata, slice_path, z_positions[i], thickness=out_thickness)
     else:
         raise NotImplementedError('{} extension not yet supported!'.format(out_type))
+
+
+def save_metric(data, out_type, out_dir, metrics_to_c, f_name, affine_in, target_scale=None):
+    """Converts a PyTorch tensor to a NumPy array if needed."""
+    if isinstance(affine_in, torch.Tensor):  # Check if it's a tensor
+        if affine_in.dim() == 3 and affine_in.shape[0] == 1:  # Shape [1, 4, 4]
+            affine_in = affine_in.squeeze(0)  # Remove batch dimension → [4, 4]
+        affine_in = affine_in.cpu().numpy()  # Convert to NumPy (ensures CPU conversion)
+    if target_scale is not None:
+        affine_in[2,2] = 1.0
+  
+    for metric in metrics_to_c:
+        if metric.lower() == 'sobel':
+            output_folder = os.path.join(out_dir, metric)
+            os.makedirs(output_folder, exist_ok=True)
+            out_fname = os.path.join(output_folder, f_name+'.{}'.format(out_type))
+            vol_map = _apply_filters(data)
+            vol_map = vol_map.transpose(1,2,0)
+            print(vol_map.shape)
+            nii_to_save = nib.Nifti1Image(vol_map , affine=affine_in)
+            nib.save(nii_to_save, out_fname)
+        elif metric.lower() == 'emphysema':
+            continue
+        else:
+            continue
+
+
+def _apply_filters(image_3d):
+    sobel_map = np.zeros_like(image_3d)
+    for z in range(image_3d.shape[0]):
+        slice_image = image_3d[z,:,:]
+        slice_min = slice_image.min()
+        slice_max = slice_image.max()
+        slice_normalized = (slice_image - slice_min) / (slice_max - slice_min)
+        sobel_map[z,:,:] = filters.sobel(slice_normalized)
+    return sobel_map
+
 
 """
 Make directories; input is an instance of string

@@ -19,7 +19,67 @@ def _check_transpose(vol):
         raise ValueError(f"Unexpected data shape: {vol.shape}. Unable to determine the correct transpose.")
     return vol
 
-def _get_pixels_hu(scans, apply_lut):
+
+def _sort_dicoms(dicoms):
+    """
+    Sort the dicoms based om the image possition patient
+
+    :param dicoms: list of dicoms
+    """
+    # find most significant axis to use during sorting
+    # the original way of sorting (first x than y than z) does not work in certain border situations
+    # where for exampe the X will only slightly change causing the values to remain equal on multiple slices
+    # messing up the sorting completely)
+    dicom_input_sorted_x = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[0]))
+    dicom_input_sorted_y = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[1]))
+    dicom_input_sorted_z = sorted(dicoms, key=lambda x: (x.ImagePositionPatient[2]))
+    diff_x = abs(dicom_input_sorted_x[-1].ImagePositionPatient[0] - dicom_input_sorted_x[0].ImagePositionPatient[0])
+    diff_y = abs(dicom_input_sorted_y[-1].ImagePositionPatient[1] - dicom_input_sorted_y[0].ImagePositionPatient[1])
+    diff_z = abs(dicom_input_sorted_z[-1].ImagePositionPatient[2] - dicom_input_sorted_z[0].ImagePositionPatient[2])
+    if diff_x >= diff_y and diff_x >= diff_z:
+        return dicom_input_sorted_x
+    if diff_y >= diff_x and diff_y >= diff_z:
+        return dicom_input_sorted_y
+    if diff_z >= diff_x and diff_z >= diff_y:
+        return dicom_input_sorted_z
+
+
+def get_affine_matrix(sorted_dicoms):
+    """
+    Function to generate the affine matrix for a dicom series
+    This method was based on (http://nipy.org/nibabel/dicom/dicom_orientation.html)
+
+    :param sorted_dicoms: list with sorted dicom files
+    """
+    # Create affine matrix (http://nipy.sourceforge.net/nibabel/dicom/dicom_orientation.html#dicom-slice-affine)
+    image_orient1 = np.array(sorted_dicoms[0].ImageOrientationPatient)[0:3]
+    image_orient2 = np.array(sorted_dicoms[0].ImageOrientationPatient)[3:6]
+    delta_r = float(sorted_dicoms[0].PixelSpacing[0])
+    delta_c = float(sorted_dicoms[0].PixelSpacing[1])
+    image_pos = np.array(sorted_dicoms[0].ImagePositionPatient)
+    last_image_pos = np.array(sorted_dicoms[-1].ImagePositionPatient)
+
+    if len(sorted_dicoms) == 1:
+        # Single slice
+        slice_thickness = 1
+        if "SliceThickness" in sorted_dicoms[0]:
+            slice_thickness = sorted_dicoms[0].SliceThickness
+        step = - np.cross(image_orient1, image_orient2) * slice_thickness
+    else:
+        step = (image_pos - last_image_pos) / (1 - len(sorted_dicoms))
+    # check if this is actually a volume and not all slices on the same location
+    if np.linalg.norm(step) == 0.0:
+        raise ConversionError("NOT_A_VOLUME")
+    affine = np.array(
+        [[-image_orient1[0] * delta_c, -image_orient2[0] * delta_r, -step[0], -image_pos[0]],
+         [-image_orient1[1] * delta_c, -image_orient2[1] * delta_r, -step[1], -image_pos[1]],
+         [image_orient1[2] * delta_c, image_orient2[2] * delta_r, step[2], image_pos[2]],
+         [0, 0, 0, 1]]
+    )
+    return affine # , np.linalg.norm(step)
+
+
+def _get_pixels_hu(scans, apply_lut=True):
     image = np.stack([s.pixel_array for s in scans])
     image = image.astype(np.int16)
     if apply_lut:
@@ -33,6 +93,7 @@ def _get_pixels_hu(scans, apply_lut):
         return np.array(image, dtype=np.int16)
     else:
         return image
+
 
 def read_data(vol_pth, ext, apply_lut_for_dcm=True):
     if ext == 'nii' or ext == 'nii.gz':
@@ -63,12 +124,15 @@ def read_data(vol_pth, ext, apply_lut_for_dcm=True):
                 z_start = float(metadata_only.ImagePositionPatient[2])  # Starting Z position
                 z_sign = -1 if z_start < 0 else 1  # Determine the sign of the Z position (top-bottom/bottom-top)
                 """
-        data = _get_pixels_hu(slices, apply_lut_for_dcm)
-        z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
-        z_start = slices[0].ImagePositionPatient[2]
-        affine_info, header_info = np.eye(4), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
+        sorted_slices = _sort_dicoms(slices)
+        data = _get_pixels_hu(sorted_slices, apply_lut_for_dcm)
+        # z_sign = 1 if slices[-1].ImagePositionPatient[2] > slices[0].ImagePositionPatient[2] else -1
+        # z_start = slices[0].ImagePositionPatient[2]
+        z_sign = 1 if sorted_slices[-1].ImagePositionPatient[2] > sorted_slices[0].ImagePositionPatient[2] else -1
+        z_start = sorted_slices[0].ImagePositionPatient[2]
+        affine_info, header_info = get_affine_matrix(sorted_slices), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
     else:
-        raise ValueError('Unknown file format!... Expects only `nii`, `nii.gz`, or `dcm`')
+        raise ValueError('Unknown file format!... Expects only `.nii`, `.nii.gz`, or `.dcm`')
     return affine_info, header_info, data.astype(np.int16)
 
 
@@ -83,3 +147,4 @@ class ImgToTensor(object):
         img += move_HU
         img = torch.from_numpy(img)
         return torch.unsqueeze(img.float().div_(img.max()), axis=0)
+

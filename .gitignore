@@ -4,6 +4,7 @@ SESSIONS_NLST/
 SESSIONS_SYBIL/
 SESSIONS_ST/
 utils_tmp/
+ctnorm.egg-info/
 write_config.py
 *.sh
 *.pth

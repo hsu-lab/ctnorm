@@ -1,4 +1,5 @@
 pydicom>=2.3.1
+numpy==1.18.5
 torchio
 lifelines
 dash

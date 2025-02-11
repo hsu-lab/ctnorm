@@ -1,9 +1,0 @@
-pydicom>=2.3.1
-torchio
-lifelines
-dash
-dash_slicer
-dash_bootstrap_components
-plotly
-alive-progress
-tqdm>=4.35.0
