@@ -80,6 +80,16 @@ $(document).ready(function () {
     });
 });
 </script>
+
+<style>
+    /* Ensure plots never overflow their container */
+    .plotly-graph-div {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        overflow: hidden;
+    }
+</style>
 {% endblock header %}
 
 {% block content %}
