@@ -33,17 +33,21 @@ def main(config, global_logger, session_path):
             df = read_csv(dataset_opt['in_uids'])
 
         if dataset.get('variability', None):
-            load_from = dataset['variability'].get('load_from', None)
+            load_from = dataset.get('load_from', None)
             if load_from:
                 characterization_csv = os.path.join(config['Global']['session_base_path'], load_from, 'Characterization', dataset['name'], 'data_characterization.csv')
             else:
                 characterization_csv = os.path.join(session_path, 'Characterization', dataset['name'], 'data_characterization.csv')
-            base_df = read_csv(characterization_csv)
-            if dataset['variability']['name'] not in base_df.columns:
-                raise ValueError(f"Variability: {dataset['variability']['name']} not found in {characterization_csv}")
 
-            df = df.merge(base_df, on="uids", how="left")
-            var_gp = dict(tuple(df.groupby(dataset['variability']['name'])))
+            base_df = read_csv(characterization_csv)
+            var_gp = {}
+            for each_var in dataset['variability']:
+                if each_var not in base_df.columns:
+                    raise ValueError(f"Variability: {dataset['variability']['name']} not found in {characterization_csv}")
+                _df = df.merge(base_df, on="uids", how="left")
+                cur_gp = dict(tuple(_df.groupby(each_var)))
+                for key, gp in cur_gp.items():
+                    var_gp[key] = gp
         else:
             var_gp = {'all_var':df}
 
@@ -66,6 +70,7 @@ def main(config, global_logger, session_path):
                     serie = Serie(dicom_fullpath)
                     scores = model.predict([serie])
                     all_scores.append(scores)
+
             if need_evaluation:
                 results = model.evaluate(all_series)
                 with open(gp_out_name, "wb") as f:

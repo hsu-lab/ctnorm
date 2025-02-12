@@ -177,7 +177,8 @@ def main(config, global_logger, session_path):
                                 out_f_toread = os.path.join(out_d, data['uid'][0], 'Volume', '{}--{}.nii.gz'.format(model['name'], data['uid'][0]))
                             else:
                                 raise NotImplementedError("Only '.dcm' and '.nii.gz' are supported at the moment!")
-                                
+                            
+                            # Keep track of files to process for metric calculation
                             if model['name'] not in args:
                                 args[model['name']] =  {}
                             if dataset['name'] not in args[model['name']]:
@@ -187,8 +188,28 @@ def main(config, global_logger, session_path):
                                 args[model['name']][dataset['name']]['mask_pth'].append(data['mask_root'][0])
                         bar()
 
+    """
+    # Compute metrics after all harmonized images are saved!
     if metrics:
-        pass
+        args = {'SNGAN': {'NLST': {'img_pth': ['./SESSIONS/20250211-190514-29/Harmonization/NLST/test/data--106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490/Volume/SNGAN--data--106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490.nii.gz'], 'mask_pth': ['/data_1/ctnorm-demo-results/nlst/lung_masks/106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490.nii.gz']}, 'NLST-2': {'img_pth': ['./SESSIONS/20250211-190514-29/Harmonization/NLST-2/test/data--106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490/Volume/SNGAN--data--106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490.nii.gz'], 'mask_pth': ['/data_1/ctnorm-demo-results/nlst/lung_masks/106498--01-02-1999-NA-NLST-LSS-72562--2.000000-0OPASEVZOOMB30f310212075.040.0null-92490.nii.gz']}}}
+        # For each metric, we iterate thourgh each model run for each dataset run
+        for metric in metrics:
+            
+
+            for arg in args:
+                print('Model is:', arg)
+                arg_mod = args[arg]
+                for each_d in arg_mod:
+
+                    out_d = os.path.join(session_path, current_mod, each_d, metric)
+                    os.makedirs(out_d, exist_ok=True)
+                    print('Dataset is:', out_d)
+                    # df = helper_func.save_metric(cases=arg_mod[each_d], metric=metric)
+                    output_name = "{}_{}.pkl".format(arg, each_d)
+
+
+            # print(arg_mod)
+        
         # args = {k: v for k, v in data.items() if k != "dataroot_LR"}
         # """
         # Parallel(n_jobs=4)(delayed(helper_func.save_metric)(
@@ -202,3 +223,4 @@ def main(config, global_logger, session_path):
         # helper_func.save_metric(sr_vol, out_type='nii.gz', out_dir=os.path.join(out_d, args['uid'][0]), metrics_to_c=metrics,
         #     f_name='{}--{}'.format(model['name'], args['uid'][0]), affine_in=args['affine_info'], target_scale=models_param.get('scale', None), ext_utils=args)
 
+    """
