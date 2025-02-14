@@ -9,6 +9,8 @@ write_config.py
 *.sh
 *.pth
 images/
+iframe_figures/
+helpers_tmp.py
 run_docker.sh
 characterize_archive.py
 run_module_archive.py

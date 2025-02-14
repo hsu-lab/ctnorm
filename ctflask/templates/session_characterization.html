@@ -78,10 +78,27 @@ $(document).ready(function () {
             }
         });
     });
+
+    // Function to resize Plotly figures to fit their containers
+    function resizePlotlyFigures() {
+        $('.plotly-graph-div').each(function () {
+            Plotly.relayout(this, {
+                'autosize': true
+            });
+        });
+    }
+    // Resize when window loads or resizes
+    $(window).on('load resize', function () {
+        resizePlotlyFigures();
+    });
+    // Ensure resizing works when switching tabs
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+        resizePlotlyFigures();
+    });
+
 });
 </script>
-
-<style>
+<!-- <style>
     /* Ensure plots never overflow their container */
     .plotly-graph-div {
         width: 100% !important;
@@ -89,7 +106,7 @@ $(document).ready(function () {
         height: auto !important;
         overflow: hidden;
     }
-</style>
+</style> -->
 {% endblock header %}
 
 {% block content %}
@@ -133,6 +150,9 @@ $(document).ready(function () {
                 </div>
                 <div class="col-md-6">
                     <div>{{ figures['kurtosis'] | safe if figures }}</div>
+                </div>
+                <div class="col-md-6">
+                    <div>{{ figures['kl'] | safe if figures }}</div>
                 </div>
                 <div class="col-md-6">
                     <div>{{ figures['snr'] | safe if figures }}</div>

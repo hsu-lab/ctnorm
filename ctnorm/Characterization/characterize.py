@@ -16,23 +16,23 @@ def data_char(input_file, input_dtype, out_dir, dataset_name, global_logger, par
     """
     input_df = pd.read_csv(input_file)
     directory_paths = input_df['uids']
-    
+
     clip_range = params.get('clip_range', [-1024, 3071])
     bins = params.get('bins', 64)
-    kde_points = params.get('kde_points', None)
+    kde_sample = params.get('kde_sample', None)
+    kde_points = params.get('kde_points', 1000)
     voxel = metrics.get('voxel', {})
     metadata = metrics.get('metadata', {})
 
     aggregate_hist = None  # Stores cumulative histogram data
     metadata_stats = []  # Stores metadata and voxel statistics
     voxel_stats = []
-    x_grid = np.linspace(clip_range[0], clip_range[1], 1000)
+    x_grid = np.linspace(clip_range[0], clip_range[1], kde_points)
     avg_kde = np.zeros_like(x_grid)
     kde_count = 0
 
     for i, directory_path in enumerate(tqdm(directory_paths, desc="Processing DICOM directories")):
         directory_path = str(directory_path)  # Ensure it's a string
-        # Check if directory exists
         if not os.path.exists(directory_path):
             global_logger.error(f"Directory not found: {directory_path}")
             continue
@@ -58,8 +58,8 @@ def data_char(input_file, input_dtype, out_dir, dataset_name, global_logger, par
                 voxel_info['snr'] = snr_value
             if 'kde' in voxel or 'all' in voxel:
                 # Subsample data to speed up KDE computation
-                if kde_points:
-                    sample_data = np.random.choice(data.flatten(), kde_points, replace=False)
+                if kde_sample:
+                    sample_data = np.random.choice(data.flatten(), kde_sample, replace=False)
                     kde = gaussian_kde(sample_data)
                 else:
                     kde = gaussian_kde(data.flatten())
@@ -86,13 +86,13 @@ def data_char(input_file, input_dtype, out_dir, dataset_name, global_logger, par
     if ('histogram' in voxel or 'all' in voxel) and aggregate_hist is not None:
         histogram_path = os.path.join(out_dir, 'histogram.pkl')
         with open(histogram_path, "wb") as f:
-            pickle.dump({'histogram':aggregate_hist, 'bin_edges':bin_edges}, f)
+            pickle.dump({'histogram':aggregate_hist, 'bin_edges':bin_edges, 'min-max':clip_range}, f)
         global_logger.info(f"Histogram saved at {out_dir}/histogram.pkl")
 
     if ('kde' in voxel or 'all' in voxel) and kde_count > 0:
         kde_path = os.path.join(out_dir, 'kde.pkl')
         with open(kde_path, "wb") as f:
-            pickle.dump(avg_kde, f)
+            pickle.dump({'kde':avg_kde, 'kde_points':kde_points, 'kde_sample':kde_sample, 'min-max':clip_range}, f)
         global_logger.info(f"KDE saved at {kde_path}")
 
     if voxel:
