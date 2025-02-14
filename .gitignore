@@ -10,6 +10,8 @@ write_config.py
 *.pth
 images/
 run_docker.sh
+characterize_archive.py
+run_module_archive.py
 config_test.yaml
 config_v1.yaml
 config_v2.yaml

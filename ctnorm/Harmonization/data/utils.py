@@ -95,19 +95,22 @@ def _get_pixels_hu(scans, apply_lut=True):
         return image
 
 
-def read_data(vol_pth, ext, apply_lut_for_dcm=True):
+def read_data(vol_pth, ext, apply_lut_for_dcm=True, need_affine_for_dcm=True):
     if ext == '.nii' or ext == '.nii.gz':
         vol_pth = vol_pth
         data = nib.load(vol_pth)
         affine_info, header_info = data.affine, {}
         data = _check_transpose(data.get_fdata())
-    elif ext == 'h5':
+    elif ext == '.h5':
         with h5py.File(vol, 'r') as file:
             data = _check_transpose(file['data'][:,:,:])
             affine_info, header_info = np.eye(4), {}
-    elif ext == 'dcm':
+    elif ext == '.dcm':
         dicom_files = [f for f in os.listdir(vol_pth) if f.endswith('.dcm')]
         dicom_files.sort()
+        if not dicom_files:
+            raise RuntimeErrorr(f"No DICOM files found in: {directory_path}")
+
         slices = []
         z_start = None
         for index, s in enumerate(dicom_files):
@@ -128,7 +131,11 @@ def read_data(vol_pth, ext, apply_lut_for_dcm=True):
         data = _get_pixels_hu(sorted_slices, apply_lut_for_dcm)
         z_sign = 1 if sorted_slices[-1].ImagePositionPatient[2] > sorted_slices[0].ImagePositionPatient[2] else -1
         z_start = sorted_slices[0].ImagePositionPatient[2]
-        affine_info, header_info = get_affine_matrix(sorted_slices), {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
+        if need_affine_for_dcm:
+            affine_info = get_affine_matrix(sorted_slices)
+        else:
+            affine_info = np.eye(4)
+        header_info = {'z_start':z_start, 'z_sign':z_sign, 'meta_data':metadata_only}
     else:
         raise ValueError('Unknown file format!... Expects only `.nii`, `.nii.gz`, or `.dcm`')
     return affine_info, header_info, data.astype(np.int16)

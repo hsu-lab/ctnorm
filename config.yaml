@@ -1,33 +1,46 @@
 Global:
-  session_base_path: "./SESSIONS_ST"
+  session_base_path: "./SESSIONS_SYBIL"
 
 Datasets:
   NLST:
     in_uids: "./utils_tmp/csvs/totest_order.csv"
-    in_dtype: "dcm"
+    in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset"
   NLST-2:
     in_uids: "./utils_tmp/csvs/totest_order.csv"
-    in_dtype: "dcm"
+    in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset again"
 
 Modules:
-  Characterization: false
+  Characterization: true
   Harmonization: false
-  Robustness: true
+  Robustness: false
 
 Characterization:
   input_datasets:
     - name: NLST
+  metrics:
+    voxel:
+      - all # Availabel param: histogram, skewness, kurtosis, snr, kde
+    metadata:
+      - all # Availabel options: slice_thickness, manufacturer, convolution_kernel
+  params:
+    clip_range : [-1024, 3071] # Standard HU range
+    bins: 64
+    kde_points: 100000 # If not specfied, uses all voxel values to compute kde; can be computationally expensive
 
 Harmonization:
   mode: "test"
   input_datasets:
     - name: NLST
-    - name: NLST-2
+      in_uids: "./utils_tmp/csvs/totest_order.csv"
+    # - name: NLST-2
+    #   in_uids: "./utils_tmp/csvs/totest_order.csv"
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
+    - name: WGAN
+      pretrained_G: "./pretrained_weights/WGAN/latestG-1-1.pth"
   param:
     tile_xy: 512
     tile_z: 32
@@ -35,7 +48,8 @@ Harmonization:
     gpu_id: 0
     out_dtype: ".nii.gz"
   metrics:
-    - Radiomic
+    - sobel
+    - radiomic
 
 Robustness:
   input_datasets:

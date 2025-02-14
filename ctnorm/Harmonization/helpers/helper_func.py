@@ -4,17 +4,19 @@ import nibabel as nib
 import pickle
 import numpy as np
 import torch
+import pandas as pd
 import random
 from .image_reorientation import reorient_image
 import SimpleITK as sitk
 from radiomics import featureextractor
 import six
 from skimage import filters
-"""
+from scipy.ndimage import sobel
+
 # Set logging for radimioc rather than printing on screen
+import radiomics
 logger = radiomics.logging.getLogger("radiomics")
 logger.setLevel(radiomics.logging.ERROR)
-"""
 
 
 def _diagonal_matches(affine1, affine2, atol=1.0):
@@ -78,12 +80,12 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         if target_scale is not None:
             affine_in[2,2] = 1.0 # Currently slice thickness harmonization assumes the CT is always mapped to 1mm
         
-        data = np.transpose(data, (2,1,0)) # REQUIRED FOR RAS ALIGNMENT IN ITK
+        data = np.transpose(data, (2,1,0)) # Required for ras alingment in ITK
         output_folder = os.path.join(out_dir, m_type)
         os.makedirs(output_folder, exist_ok=True)
         out_f = os.path.join(output_folder, f_name+out_type)
         nii_to_save = nib.Nifti1Image(data, affine=affine_in)
-        # BY DEFAULT: WE REORIENT IMAGE AS DONE IN dicom2nifti LIBRARY
+        # By Default: We reorient image as done in dicom2nifti library
         if reorient:
             nii_to_save = reorient_image(nii_to_save)
         nib.save(nii_to_save, out_f)
@@ -121,8 +123,27 @@ def save_volume(data, out_type, out_dir, m_type, f_name, meta=None, affine_in=No
         raise NotImplementedError('{} extension not yet supported!'.format(out_type))
 
 
-def save_metric(cases, metric):
-    if metric.lower() == 'radiomic':
+def save_metric(cases, metric, mod_name):
+    if metric.lower() == 'sobel':
+        in_cases = cases['img_pth']
+        for case_idx in range(len(in_cases)):
+            vol_pth = in_cases[case_idx]
+            if os.path.isdir(vol_pth):
+                raise ValueError("Harmonization output is in '.dcm' directory format! Please ensure it follows '.nii.gz' directory format")
+            assert vol_pth.endswith('.nii.gz'), "Computing metrics only expects input to be .nii.gz"
+
+            output_metric_to = os.path.join(vol_pth.split('Volume')[0], metric.title()) #  
+            os.makedirs(output_metric_to, exist_ok=True)
+            out_metric_to_name = os.path.join(output_metric_to, vol_pth.split('/')[-1])
+            vol = nib.load(vol_pth)
+            sobel_map = _compute_3d_sobel_map(vol.get_fdata())
+            nii_to_save = nib.Nifti1Image(sobel_map, affine=vol.affine)
+            nib.save(nii_to_save, out_metric_to_name)
+
+    elif metric.lower() == 'emphysema':
+        pass
+
+    elif metric.lower() == 'radiomic':
         in_cases = cases['img_pth']
         in_masks = cases['mask_pth']
         if len(in_masks) == 0:
@@ -133,9 +154,13 @@ def save_metric(cases, metric):
             global extractor
             paramPath = './CT.yaml'
             extractor = featureextractor.RadiomicsFeatureExtractor(paramPath)
-        
+
         df_array = {'id':[]}
         for case_idx in range(len(in_cases)):
+            if case_idx == 0:
+                output_metric_to = os.path.join(in_cases[case_idx].split('test')[0], metric)
+                os.makedirs(output_metric_to, exist_ok=True)
+
             in_case = sitk.ReadImage(in_cases[case_idx])
             in_mask = sitk.ReadImage(in_masks[case_idx])
             feats = _get_radiomics(extractor, in_case, in_mask)
@@ -144,53 +169,40 @@ def save_metric(cases, metric):
                     if feat not in df_array:
                         df_array[feat] = []
                     df_array[feat].append(feats[feat].item())
-            df_array['id'].append(in_case)
+            df_array['id'].append(in_cases[case_idx].split('/')[-1])
         df = pd.DataFrame(df_array)
-        return df
+        csv_name = os.path.join(output_metric_to, '{}.csv'.format(mod_name))
+        df.to_csv(csv_name, index=False)
+    else:
+        raise NotImplementedError('Metric {} not implemented!'.format(metric))
 
 
-    # for metric in metrics_to_c:
-    #     if metric.lower() == 'sobel':
-    #         continue
+def _compute_3d_sobel_map(volume):
+    """
+    Compute the Sobel map for each slice along the depth axis of a 3D volume.
+    Parameters:
+    volume (numpy.ndarray): 3D numpy array with shape (d, w, h).
+    Returns:
+    numpy.ndarray: 3D sobel map with the same shape as the input volume.
+    """
+    if len(volume.shape) != 3:
+        raise ValueError("Input volume must be a 3D array")
+    
+    w, h, d = volume.shape
+    sobel_map = np.zeros((w, h, d), dtype=np.float32)
+    for i in range(d):
+        slice_ = volume[:, :, i]
+        # Normalize slice to 0-255 only if needed
+        if slice_.max() != slice_.min():
+            slice_ = (slice_ - slice_.min()) / (slice_.max() - slice_.min()) * 255
+        sobel_x = sobel(slice_, axis=0, mode='constant')
+        sobel_y = sobel(slice_, axis=1, mode='constant')
+        # Compute the Sobel magnitude
+        sobel_map[:, :, i] = np.hypot(sobel_x, sobel_y)
 
-    #     elif metric.lower() == 'emphysema':
-    #         continue
-
-    #     elif metric.lower() == 'radiomic':
-    #         if ext_utils is None:
-    #             raise ValueError('ROI mask must be specified to extract radiomic features!')
-
-    #         # Only define once
-    #         if "extractor" not in globals():
-    #             global extractor
-    #             paramPath = './CT.yaml'
-    #             extractor = featureextractor.RadiomicsFeatureExtractor(paramPath)
-
-    #         # NOTE: This logic can be modified if output volume and mask has been validated to have same orientation
-    #         # even though the affine doesn't match
-    #         mask_f = nib.load(ext_utils['mask_root'][0]) # Assumes mask is in RAS
-    #         if _diagonal_matches(affine_in, mask_f.affine):
-    #             # Assumes orientation has been checked and OK!
-    #             nii_img = nib.Nifti1Image(data, affine=affine_in)
-    #             del data
-    #             pass
-    #         else:
-    #             # Reorients image to RAS; assuming masks is already in RAS
-    #             # NOTE: This logic can be skipped if orientation has been verified to match
-    #             data = np.transpose(data, (2,1,0))
-    #             nii_img = nib.Nifti1Image(data, affine=affine_in)
-    #             del data
-    #             nii_img = reorient_image(nii_img)
-
-    #         # Extract feature
-    #         image_sitk = _nifti_volume_to_sitk(nii_img, None, [-1000., 500.])
-    #         mask_sitk = _nifti_volume_to_sitk(mask_f, nii_img.affine, None)
-    #         feats = _get_radiomics(extractor, image_sitk, mask_sitk)
-    #         print('Features extracted!')
-    #         output_folder = os.path.join(out_dir, metric)
-    #         os.makedirs(output_folder, exist_ok=True)
-    #     else:
-    #         continue
+    # Normalize the Sobel map to 0-255
+    sobel_map = (sobel_map - sobel_map.min()) / (sobel_map.max() - sobel_map.min()) * 255
+    return sobel_map
 
 
 def _get_radiomics(extractor, image, label):
