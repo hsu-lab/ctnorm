@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block header %}
+<form action="{{ url_for('reset_sess') }}" method="GET" class="row g-2 align-items-center">
+    <div class="col-auto nav-item">
+        <button 
+            class="btn btn-primary px-3" 
+            type="submit"
+        >
+            Reset Session
+        </button>
+    </div>
+</form>
+
+{% endblock header %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    {% if sess %}
+        <h1 class="h2">Running session: {{ sess }}</h1>
+    {% endif %}
+</div>
+
+<div class="container mt-4">
+    <!-- Navigation Tabs for Datasets -->
+    <ul class="nav nav-tabs" id="datasetTabs" role="tablist">
+        {% for dataset in datasets %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %}" id="{{ dataset }}-tab" data-bs-toggle="tab" data-bs-target="#{{ dataset }}" type="button" role="tab">
+                {{ dataset }}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content mt-3" id="datasetTabsContent">
+        {% for dataset in datasets %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ dataset }}" role="tabpanel">
+            <!-- Display all plots in rows -->
+            <div class="row">
+                {% if plots[dataset] %}
+                    {% for var_type, plot_html in plots[dataset].items() %}
+                    <div class="col-12 mb-4">
+                        <div class="plot-container">
+                            {{ plot_html | safe }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center">
+                        <p>No variability types found for {{ dataset }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+
+
+
+{% endblock content %}
