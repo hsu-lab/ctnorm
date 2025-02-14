@@ -2,8 +2,8 @@ Global:
   session_base_path: "./SESSIONS_SYBIL"
 
 Datasets:
-  UCLA-LDCT:
-    in_uids: "./utils_tmp/filtered_csv/ucla_ldct_harm_mnt.csv"
+  NLST:
+    in_uids: "./utils_tmp/csvs/nlst_input.csv"
     in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset"
   NLST-2:
@@ -18,25 +18,23 @@ Modules:
 
 Characterization:
   input_datasets:
-    - name: UCLA-LDCT
+    - name: NLST
   metrics:
     voxel:
-      - all # Availabel param: histogram, skewness, kurtosis, snr, kde
+      - all
     metadata:
-      - all # Availabel options: slice_thickness, manufacturer, convolution_kernel
+      - all
   params:
     clip_range : [-1024, 3071] # Standard HU range
     bins: 64
-    kde_points: 1000 
-    kde_sample: 100000 # If not specfied, uses all voxel values to compute kde; can be computationally expensive
+    kde_points: 1e3
+    kde_sample: 1e5 # Sample voxel to compute kde; If removed, computes kde for all voxel values - can be computationally expensive
 
 Harmonization:
   mode: "test"
   input_datasets:
     - name: NLST
       in_uids: "./utils_tmp/csvs/totest_order.csv"
-    # - name: NLST-2
-    #   in_uids: "./utils_tmp/csvs/totest_order.csv"
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"

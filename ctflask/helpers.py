@@ -66,30 +66,31 @@ def plot_characterization(session_path, bins=64):
         # Wasserstein distances
         datasets = list(histogram_data.keys())
         n = len(datasets)
-        heatmap_matrix = np.zeros((n, n))
-        for i, ds1 in enumerate(datasets):
-            hist1 = histogram_data[ds1] / np.sum(histogram_data[ds1])  # Normalize
-            for j, ds2 in enumerate(datasets):
-                hist2 = histogram_data[ds2] / np.sum(histogram_data[ds2])  # Normalize
-                # Wasserstein distance calculation
-                bins = np.arange(len(hist1))  # Assuming histograms share the same bin structure
-                heatmap_matrix[i, j] = wasserstein_distance(bins, bins, hist1, hist2)
-        heatmap_fig = go.Figure(data=go.Heatmap(
-            z=heatmap_matrix,
-            x=datasets,
-            y=datasets,
-            colorscale="Plasma",
-            text=[[f"{val:.4f}" for val in row] for row in heatmap_matrix],
-            texttemplate="%{text}",
-            hoverongaps=False
-        ))
-        heatmap_fig.update_layout(
-            title="Wasserstein Distances",
-            xaxis_title="Dataset",
-            yaxis_title="Dataset",
-            xaxis_tickangle=-45,
-        )
-        voxel_meta_figures['kl'] = heatmap_fig.to_html()
+        if n >= 2:
+            heatmap_matrix = np.zeros((n, n))
+            for i, ds1 in enumerate(datasets):
+                hist1 = histogram_data[ds1] / np.sum(histogram_data[ds1])  # Normalize
+                for j, ds2 in enumerate(datasets):
+                    hist2 = histogram_data[ds2] / np.sum(histogram_data[ds2])  # Normalize
+                    # Wasserstein distance calculation
+                    bins = np.arange(len(hist1))  # Assuming histograms share the same bin structure
+                    heatmap_matrix[i, j] = wasserstein_distance(bins, bins, hist1, hist2)
+            heatmap_fig = go.Figure(data=go.Heatmap(
+                z=heatmap_matrix,
+                x=datasets,
+                y=datasets,
+                colorscale="Plasma",
+                text=[[f"{val:.4f}" for val in row] for row in heatmap_matrix],
+                texttemplate="%{text}",
+                hoverongaps=False
+            ))
+            heatmap_fig.update_layout(
+                title="Wasserstein Distances",
+                xaxis_title="Dataset",
+                yaxis_title="Dataset",
+                xaxis_tickangle=-45,
+            )
+            voxel_meta_figures['kl'] = heatmap_fig.to_html()
 
         # Histogram Plot
         fig_hist = go.Figure()

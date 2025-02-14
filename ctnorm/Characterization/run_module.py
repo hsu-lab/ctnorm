@@ -20,11 +20,11 @@ def main(config, global_logger, session_path):
         os.makedirs(out_dir, exist_ok=True)
         dataset_opt = config.get('Datasets', {}).get(dataset['name'])
         if not dataset_opt:
-            raise RuntimeError(f"Dataset '{dataset}' is missing in configuration under 'Datasets'.")
+            raise RuntimeError(f"Dataset '{dataset['name']}' is missing in configuration under 'Datasets'.")
         
         in_dtype = dataset_opt.get('in_dtype')
         if not in_dtype in ['.dcm']:
-            raise RuntimeError(f"Dataset '{dataset}' type must be dicom!")
+            raise RuntimeError(f"Dataset '{dataset['name']}' type must be dicom!")
 
         input_file = dataset_opt.get('in_uids')
         if not input_file:

@@ -19,8 +19,8 @@ def data_char(input_file, input_dtype, out_dir, dataset_name, global_logger, par
 
     clip_range = params.get('clip_range', [-1024, 3071])
     bins = params.get('bins', 64)
-    kde_sample = params.get('kde_sample', None)
-    kde_points = params.get('kde_points', 1000)
+    kde_sample = int(float(params.get('kde_sample', 1e5)))
+    kde_points = int(float(params.get('kde_points', 1e3)))
     voxel = metrics.get('voxel', {})
     metadata = metrics.get('metadata', {})
 
@@ -57,9 +57,19 @@ def data_char(input_file, input_dtype, out_dir, dataset_name, global_logger, par
                 snr_value = 10 * np.log10((mean_signal ** 2) / (std_noise ** 2)) if std_noise > 0 else 0
                 voxel_info['snr'] = snr_value
             if 'kde' in voxel or 'all' in voxel:
-                # Subsample data to speed up KDE computation
                 if kde_sample:
-                    sample_data = np.random.choice(data.flatten(), kde_sample, replace=False)
+                    # Calculate the number of slices
+                    num_slices = data.shape[0]  # Assuming data is shaped as (slices, height, width)
+                    sample_per_slice = max(1, kde_sample // num_slices)  # Ensure at least one sample per slice
+                    sample_data = []
+                    for slice_idx in range(num_slices):
+                        slice_data = data[slice_idx].flatten()
+                        if len(slice_data) > sample_per_slice:
+                            sample_data.append(np.random.choice(slice_data, sample_per_slice, replace=False))
+                        else:
+                            sample_data.append(slice_data)  # If fewer elements than required, take all.
+
+                    sample_data = np.concatenate(sample_data)
                     kde = gaussian_kde(sample_data)
                 else:
                     kde = gaussian_kde(data.flatten())
