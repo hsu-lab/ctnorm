@@ -8,6 +8,7 @@ ctnorm.egg-info/
 write_config.py
 *.sh
 *.pth
+SESSIONS_Char/
 images/
 iframe_figures/
 helpers_tmp.py

@@ -1,20 +1,16 @@
 Global:
-  session_base_path: "./SESSIONS_SYBIL"
+  session_base_path: "./SESSIONS_Char"
 
 Datasets:
   NLST:
     in_uids: "./utils_tmp/csvs/nlst_input.csv"
     in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset"
-  NLST-2:
-    in_uids: "./utils_tmp/csvs/totest_order.csv"
-    in_dtype: ".dcm"
-    description: "National Lung Screening Trial dataset again"
-
+  
 Modules:
-  Characterization: true
+  Characterization: false
   Harmonization: false
-  Robustness: false
+  Robustness: true
 
 Characterization:
   input_datasets:
@@ -53,7 +49,6 @@ Harmonization:
 Robustness:
   input_datasets:
     - name: NLST
-      in_uids: "./utils_tmp/csvs/nlst_input.csv"
       variability:
         - manufacturer
         - slice_thickness

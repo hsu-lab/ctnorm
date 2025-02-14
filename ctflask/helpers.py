@@ -43,7 +43,8 @@ def plot_characterization(session_path, bins=64):
                     meta_data[dataset] = pd.read_csv(meta_path)
                 if os.path.exists(kde_path):
                     with open(kde_path, 'rb') as file:
-                        kde_data[dataset] = pickle.load(file)
+                        kde_var = pickle.load(file)
+                    kde_data[dataset] = kde_var['kde']
                 if os.path.exists(rad_path):
                     feature_names = [f.split('_')[-1] for f in pd.read_csv(rad_path).columns.tolist()[1:]]  # Exclude the first column (e.g., 'Dataset')
                     features_arg[dataset] = {'rad_path': rad_path, 'feat_names': feature_names}
