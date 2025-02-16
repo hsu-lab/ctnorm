@@ -6,11 +6,15 @@ Datasets:
     in_uids: "./utils_tmp/csvs/nlst_input.csv"
     in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset"
-  
+  UCLA CECT:
+    in_uids: "./utils_tmp/final_csvs_char/ucla_cect_subset.csv"
+    in_dtype: ".dcm"
+    description: "UCLA Contrast Enhanced dataset"
+
 Modules:
   Characterization: false
-  Harmonization: false
-  Robustness: true
+  Harmonization: true
+  Robustness: false
 
 Characterization:
   input_datasets:
@@ -34,26 +38,30 @@ Harmonization:
   models:
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
-    - name: WGAN
-      pretrained_G: "./pretrained_weights/WGAN/latestG-1-1.pth"
   param:
     tile_xy: 512
     tile_z: 32
     z_overlap: 4
     gpu_id: 0
     out_dtype: ".nii.gz"
-  metrics:
+  metrics: # sobel, radiomic, snr
+    - snr
     - sobel
-    - radiomic
 
 Robustness:
   input_datasets:
-    - name: NLST
+    # - name: NLST
+    #   variability:
+    #     - manufacturer
+    #   load_from: "20250214-220226-4f"
+    #   in_uids: "./utils_tmp/csvs/nlst_input_subset.csv"
+
+    - name: UCLA CECT
       variability:
-        - manufacturer
-        - slice_thickness
-      load_from: "20250204-142207-4f"
+        - convolution_kernel
+      load_from: "20250214-220226-4f"
+      in_uids: "./utils_tmp/final_csvs_char/ucla_cect_subset.csv"
 
   param:
     model_type: "sybil_ensemble"
-    evaluate: false
+    evaluate: true

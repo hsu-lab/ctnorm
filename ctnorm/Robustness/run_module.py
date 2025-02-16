@@ -76,14 +76,10 @@ def main(config, global_logger, session_path):
                     dicom_f.sort()
                     dicom_fullpath = [os.path.join(gp_pth, f) for f in dicom_f]
                     if need_evaluation:
-                        series = Serie(dicom_fullpath, label=cur_gp_labels[idx], censor_time=cur_gp_tte[idx])
-                        all_series.append(series)
+                        series = Serie(dicom_fullpath, label=int(cur_gp_labels[idx]), censor_time=int(cur_gp_tte[idx]))
                     else:
-                        # serie = Serie(dicom_fullpath)
                         series = Serie(dicom_fullpath)
-                        all_series.append(series)
-                        # scores = model.predict([serie])
-                        # all_scores.append(scores)
+                    all_series.append(series)
 
                 if need_evaluation:
                     results = model.evaluate(all_series)
@@ -93,3 +89,4 @@ def main(config, global_logger, session_path):
                     scores = model.predict(all_series)
                     with open(gp_out_name, "wb") as f:
                         pickle.dump(all_scores, f)
+

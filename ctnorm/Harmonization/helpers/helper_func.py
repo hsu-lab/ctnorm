@@ -12,6 +12,7 @@ from radiomics import featureextractor
 import six
 from skimage import filters
 from scipy.ndimage import sobel
+import pickle
 
 # Set logging for radimioc rather than printing on screen
 import radiomics
@@ -140,6 +141,24 @@ def save_metric(cases, metric, mod_name):
             nii_to_save = nib.Nifti1Image(sobel_map, affine=vol.affine)
             nib.save(nii_to_save, out_metric_to_name)
 
+    elif metric.lower() == 'snr':
+        in_cases = cases['img_pth']
+        snrs = []
+        for case_idx in range(len(in_cases)):
+            if case_idx == 0:
+                output_metric_to = os.path.join(in_cases[case_idx].split('test')[0], metric)
+                os.makedirs(output_metric_to, exist_ok=True)
+
+            vol_pth = in_cases[case_idx]
+            vol = nib.load(vol_pth)
+            mean_signal = np.mean(vol.get_fdata())
+            std_noise = np.std(vol.get_fdata())
+            snr = snr_value = 10 * np.log10((mean_signal ** 2) / (std_noise ** 2)) if std_noise > 0 else 0
+            snrs.append(snr)
+        out_name = os.path.join(output_metric_to, '{}.pkl'.format(mod_name))
+        with open(out_name, 'wb') as p_file:
+            pickle.dump(snrs, p_file)
+        
     elif metric.lower() == 'emphysema':
         pass
 

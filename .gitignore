@@ -3,6 +3,7 @@ SESSIONS/
 SESSIONS_NLST/
 SESSIONS_SYBIL/
 SESSIONS_ST/
+SESSIONS_Final/
 utils_tmp/
 ctnorm.egg-info/
 write_config.py
