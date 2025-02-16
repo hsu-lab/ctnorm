@@ -81,8 +81,6 @@ def load_sess():
             session["user"] = session_number
             return load_char() # Load Characterization module by default
     else:
-        # if session.get("user"):
-        #     return render_template("session_characterization.html", sess=session["user"])
         return redirect(url_for("home"))  # Redirect back to home if accessed via GET
 
 
@@ -118,7 +116,7 @@ def handle_dataset_submission():
             filenames = os.listdir(f_path)
             if len(filenames) > 0:
                 metrics = [f for f in os.listdir(os.path.join(f_path, filenames[0])) if 'metadata' not in f]
-                models = [f.split('--')[0] for f in os.listdir(os.path.join(f_path, filenames[0], metrics[0]))]
+                models = [f.split('--')[0] for f in os.listdir(os.path.join(f_path, filenames[0], metrics[0])) if 'Unharmonized' not in f]
             return jsonify({
                 "status": "success",
                 "files": filenames,
@@ -141,9 +139,18 @@ def load_preprocessing():
         session_base_path = app.config.get("SESSION_FOLDER")
         INFO = os.path.join(session_base_path, session["user"], 'Harmonization')
         if os.path.exists(INFO) and os.path.isdir(INFO):
-            available_d = os.listdir(INFO)
-            return render_template("session_preprocessing.html", active_p=True, datasets=available_d, sess=session["user"])
+            available_d = [f for f in os.listdir(INFO) if '_globalMetric' not in f] # Exclude globalMetrics since they are for graphs
+            # check if global metrics exist
+            path_to_metrics = os.path.join(INFO, '_globalMetric')
+            if os.path.exists(INFO) and os.path.isdir(INFO):
+                figures = get_harmonized_metrics(path_to_metrics)
+            else:
+                figures = {}
+            return render_template("session_preprocessing.html", active_p=True, datasets=available_d, figures=figures, sess=session["user"])
+
+
         else:
+            flash("Error: Harmonization output does not exist!", "error")
             return redirect(url_for("home"))
     return redirect(url_for("home"))  # Redirect back to home if accessed via GET
 
@@ -157,10 +164,21 @@ def handle_preprocessing():
 
         cases_pth = os.path.join(session_base_path, session["user"], 'Harmonization', datasetid, 'test', caseid, 'Volume')
         filter_cases = [os.path.join(cases_pth, f"{mod}--{caseid}") for mod in models]
+
+        # Check whether before harmonization volume is saved
+        beforenorm_name = "Unharmonized--{}".format('--'.join(filter_cases[0].split('/')[-1].split('--')[1:]))
+        if beforenorm_name in os.listdir(filter_cases[0].split('Volume')[0]+'/Volume'):
+            filter_cases.insert(0, filter_cases[0].split('Volume')[0]+'/Volume/{}'.format(beforenorm_name))
+
         slicers = []
-        for case in filter_cases:
+        for idx, case in enumerate(filter_cases):
             slicer_name = case.split('/')[-1].split('--')[0]  # Extract name
-            _, _, img = read_data(case, ext='.dcm', apply_lut_for_dcm=False)
+            if os.path.isdir(case):
+                _, _, img = read_data(case, ext='.dcm', apply_lut_for_dcm=False, need_affine_for_dcm=False)
+            elif os.path.isfile(case+'.nii.gz'):
+                _, _, img = read_data(case+'.nii.gz', ext='.nii.gz', apply_lut_for_dcm=False)
+            else:
+                return jsonify({'status': 'failed', 'message': 'File type not recognized!'})
 
             slicer = VolumeSlicer(dash_app, img, axis=0, thumbnail=False)
             slicer.graph.figure.update_layout(plot_bgcolor="rgb(0, 0, 0)") 
@@ -197,8 +215,6 @@ def readfeature_multiple():
     if request.method == "POST" and session.get("user"):
         data = request.get_json()
         feature_names = data.get('feature_names', [])  # Already cleaned feature names
-        print('Reading features:', feature_names)
-
         if (not avail_feat) or (len(feature_names) == 0):
             return jsonify({'status': 'failed', 'message': 'Radiomic features cannot be loaded!'})
         figures = plot_radiomics(avail_feat, feature_names)
@@ -206,94 +222,95 @@ def readfeature_multiple():
     else:
         return redirect(url_for("home"))
 
-from flask import Flask, render_template, session
-import os
-import pickle
-import plotly.graph_objects as go
-import numpy as np
 
 @app.route("/load_session-r", methods=["GET", "POST"])
 def load_robustness():
-    session_base_path = app.config.get("SESSION_FOLDER")
-    INFO = os.path.join(session_base_path, session["user"], 'Robustness')
-    available_d = os.listdir(INFO) if os.path.exists(INFO) and os.path.isdir(INFO) else []
-    # Dictionary to store dataset, variability type, and plots
-    dataset_plots = {}
+    if session.get("user"):
+        session_base_path = app.config.get("SESSION_FOLDER")
+        INFO = os.path.join(session_base_path, session["user"], 'Robustness')
+        if os.path.exists(INFO) and os.path.isdir(INFO):
+            available_d = os.listdir(INFO) if os.path.exists(INFO) and os.path.isdir(INFO) else []
 
-    for dataset in available_d:
-        dataset_path = os.path.join(INFO, dataset)
-        if os.path.isdir(dataset_path):
-            variability_types = os.listdir(dataset_path)
-            dataset_plots[dataset] = {}
+            dataset_plots = {}
+            for dataset in available_d:
+                dataset_path = os.path.join(INFO, dataset)
+                if os.path.isdir(dataset_path):
+                    variability_types = os.listdir(dataset_path)
+                    dataset_plots[dataset] = {}
 
-            for var_type in variability_types:
-                var_type_path = os.path.join(dataset_path, var_type)
-                if os.path.isdir(var_type_path):
-                    pickle_files = [f for f in os.listdir(var_type_path) if f.endswith('.pkl')]
-                    # Create scatter plot for each pickle file with a different color
-                    fig = go.Figure()
-                    colors = ['blue', 'green', 'red', 'orange', 'purple', 'cyan', 'magenta', 'yellow']
-                    auc_data = []
+                    for var_type in variability_types:
+                        var_type_path = os.path.join(dataset_path, var_type)
+                        if os.path.isdir(var_type_path):
+                            pickle_files = [f for f in os.listdir(var_type_path) if f.endswith('.pkl')]
+                            # Create scatter plot for each pickle file with a different color
+                            fig = go.Figure()
+                            colors = ['blue', 'green', 'red', 'orange', 'purple', 'cyan', 'magenta', 'yellow']
+                            auc_data = []
 
-                    for idx, pickle_file in enumerate(pickle_files):
-                        file_path = os.path.join(var_type_path, pickle_file)
-                        with open(file_path, 'rb') as f:
-                            data = pickle.load(f)
+                            for idx, pickle_file in enumerate(pickle_files):
+                                file_path = os.path.join(var_type_path, pickle_file)
+                                with open(file_path, 'rb') as f:
+                                    data = pickle.load(f)
 
-                        # Assuming each pickle file contains scores in a list of lists format
-                        if hasattr(data, 'scores'):
-                            # Prepare data by year
-                            scores_by_year = {year: [] for year in range(1, 7)}
+                                # Assuming each pickle file contains scores in a list of lists format
+                                if hasattr(data, 'scores'):
+                                    # Prepare data by year
+                                    scores_by_year = {year: [] for year in range(1, 7)}
 
-                            for patient_scores in data.scores:
-                                for year_idx, score in enumerate(patient_scores):
-                                    scores_by_year[year_idx + 1].append(score)
+                                    for patient_scores in data.scores:
+                                        for year_idx, score in enumerate(patient_scores):
+                                            scores_by_year[year_idx + 1].append(score)
 
-                            # Extract the base name for x-axis and legend
-                            base_name = pickle_file.split('.pkl')[0]
+                                    # Extract the base name for x-axis and legend
+                                    base_name = pickle_file.split('.pkl')[0]
 
-                            # Plot scatter plots by year with jitter to dodge points
-                            for year, scores in scores_by_year.items():
-                                jittered_x = [year + (idx * 0.1) for _ in scores]  # Add slight offset for each file
-                                fig.add_trace(go.Scatter(
-                                    x=jittered_x,
-                                    y=scores,
-                                    mode='markers',
-                                    name=f"{base_name} - Year {year}",
-                                    marker=dict(color=colors[idx % len(colors)])
-                                ))
+                                    # Plot scatter plots by year with jitter to dodge points
+                                    for year, scores in scores_by_year.items():
+                                        jittered_x = [year + (idx * 0.1) for _ in scores]  # Add slight offset for each file
+                                        fig.add_trace(go.Scatter(
+                                            x=jittered_x,
+                                            y=scores,
+                                            mode='markers',
+                                            name=f"{base_name} - Year {year}",
+                                            marker=dict(color=colors[idx % len(colors)])
+                                        ))
 
-                        # Check for auc attribute and collect mean if present
-                        if hasattr(data, 'auc') and isinstance(data.auc, list) and len(data.auc) == 6:
-                            mean_auc = np.mean(data.auc)
-                            auc_data.append((pickle_file.split('.pkl')[0], mean_auc))
-                    fig.update_layout(
-                        title=f"{' '.join(var_type.split('_')).title()} - Risk Scores by Year",
-                        xaxis_title="Year",
-                        yaxis_title="Risk Score",
-                        template="plotly_white",
-                        xaxis=dict(tickvals=list(range(1, 7)), ticktext=[f"Year {i}" for i in range(1, 7)])
-                    )
-                    dataset_plots[dataset][var_type] = fig.to_html()
+                                # Check for auc attribute and collect mean if present
+                                if hasattr(data, 'auc') and isinstance(data.auc, list) and len(data.auc) == 6:
+                                    mean_auc = np.mean(data.auc)
+                                    auc_data.append((pickle_file.split('.pkl')[0], mean_auc))
+                            fig.update_layout(
+                                title=f"{' '.join(var_type.split('_')).title()} - Risk Scores by Year",
+                                xaxis_title="Year",
+                                yaxis_title="Risk Score",
+                                template="plotly_white",
+                                xaxis=dict(tickvals=list(range(1, 7)), ticktext=[f"Year {i}" for i in range(1, 7)])
+                            )
+                            dataset_plots[dataset][var_type] = fig.to_html()
 
-                    # Generate bar plot for mean AUC values for each pickle file
-                    if auc_data:
-                        auc_fig = go.Figure()
-                        for file_name, mean_auc in auc_data:
-                            auc_fig.add_trace(go.Bar(
-                                x=[var_type],
-                                y=[mean_auc],
-                                name=file_name
-                            ))
-                        auc_fig.update_layout(
-                            title=f"{' '.join(var_type.split('_')).title()} - Mean AUC",
-                            xaxis_title="Variability Type",
-                            yaxis_title="Mean AUC",
-                            barmode="group",
-                            template="plotly_white"
-                        )
-                        dataset_plots[dataset][f"auc_plot_{var_type}"] = auc_fig.to_html()
-    return render_template("session_robustness.html", active_r=True, datasets=available_d, sess=session["user"], plots=dataset_plots)
+                            # Generate bar plot for mean AUC values for each pickle file
+                            if auc_data:
+                                auc_fig = go.Figure()
+                                for file_name, mean_auc in auc_data:
+                                    auc_fig.add_trace(go.Bar(
+                                        x=[var_type],
+                                        y=[mean_auc],
+                                        name=file_name,
+                                        hoverinfo='text+x+y'
+                                    ))
+                                auc_fig.update_layout(
+                                    title=f"{' '.join(var_type.split('_')).title()} - Mean AUC",
+                                    xaxis_title="Variability Type",
+                                    yaxis_title="Mean AUC",
+                                    barmode="group",
+                                    template="plotly_white"
+                                )
+                                dataset_plots[dataset][f"auc_plot_{var_type}"] = auc_fig.to_html()
+            return render_template("session_robustness.html", active_r=True, datasets=available_d, plots=dataset_plots, sess=session["user"])
+        else:
+            flash("Error: Robustness output does not exist!", "error")
+            return redirect(url_for("home"))
+    return redirect(url_for("home"))
 
 
 def run_server():

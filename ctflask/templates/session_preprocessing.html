@@ -193,7 +193,7 @@ $(document).ready(function() {
     {% endif %}
 </div>
 
-<h3>Dicom Viewer</h3><br>
+<h3>Image Viewer</h3><br>
 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;">
     <div style="flex: 1; text-align: center;">
         <select class="form-control form-select" id="datasetid" required>
@@ -244,88 +244,44 @@ $(document).ready(function() {
     Loading...
   </button>
 
-<!-- <div class="card" id="collapseCard">
-    <div class="card-header">
-        Voxel Variability
-    </div>
-    <div class="card-body">
-        <div class="row" id="plotly-figure">
-        </div>
-    </div>
-</div> -->
 
-<!-- <div class="accordion" id="accordionExample">
-</div> -->
-
-<div class="accordion" id="accordionExample" style="display: none;">
-
-    <div class="accordion-item" id="imageItem" style="display: none;">
-        <h2 class="accordion-header" id="headingTwo">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                Volume
+<div class="container mt-4">
+<!-- Dynamic Navigation Tabs -->
+<ul class="nav nav-tabs" id="tsneTabs" role="tablist">
+    {% for tab_name in figures.keys() %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if loop.first %}active{% endif %}" id="{{ tab_name }}-tab" 
+                    data-bs-toggle="tab" data-bs-target="#{{ tab_name }}" type="button" role="tab">
+                {{ tab_name }}
             </button>
-        </h2>
-        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-            <div class="accordion-body">
-                <div class="card-body">
-                    <div class="row" id="plotly-figure-image">
+        </li>
+    {% endfor %}
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content mt-3" id="tsneTabsContent">
+    {% for tab_name, models in figures.items() %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="{{ tab_name }}" role="tabpanel">
+            {% for model_name, plots in models.items() %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h4>{{ model_name }}</h4>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border p-2 rounded shadow">
+                            {{ plots['intensity'] | safe if plots['intensity'] else 'No intensity plot available' }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border p-2 rounded shadow">
+                            {{ plots['texture'] | safe if plots['texture'] else 'No texture plot available' }}
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% endfor %}
         </div>
-    </div>
-
-    <div class="accordion-item" id="filterItem" style="display: none;">
-        <h2 class="accordion-header" id="headingOne">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="true" aria-controls="collapseOne">
-                Sobel Filter
-            </button>
-        </h2>
-        <div id="collapseTwo" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-            <div class="accordion-body">
-                <div class="card-body">
-                    <div class="row" id="plotly-figure-filter">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="accordion-item" id="empItem" style="display: none;">
-        <h2 class="accordion-header" id="headingTwo">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="true" aria-controls="collapseTwo">
-                Emphysema Map
-            </button>
-        </h2>
-        <div id="collapseThree" class="accordion-collapse collapse show" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-            <div class="accordion-body">
-                <div class="card-body">
-                    <div class="row" id="plotly-figure-emp">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% endfor %}
 </div>
-
-<!-- <div class="accordion" id="accordionExample" style="display: none;">
-    
-    <div class="accordion-item">
-      <h2 class="accordion-header" id="headingOne" style="border: none;">
-        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          Sobel Filter
-        </button>
-      </h2>
-      <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
-        <div class="accordion-body">
-            <div class="card-body">
-                <div class="row" id="plotly-figure">
-                </div>
-            </div>
-        </div>
-      </div>
-    </div>
-
-</div> -->
+</div>
 
 {% endblock content %}

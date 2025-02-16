@@ -1,15 +1,32 @@
 Global:
-  session_base_path: "./SESSIONS_Char"
+  session_base_path: "./SESSIONS_Final"
 
 Datasets:
+  SPIE:
+    in_uids: "./utils_tmp/filtered_csv/spie_subsample.csv"
+    in_dtype: ".dcm"
+    description: "SPIE LungX"
+  UCLA-LDCT:
+    in_uids: "./utils_tmp/filtered_csv/ucla_ldct_subsample.csv"
+    in_dtype: ".dcm"
+    description: "UCLA-LDCT"
+  UCLA-CE:
+    in_uids: "./utils_tmp/filtered_csv/ucla_ce_subsample.csv"
+    in_dtype: ".dcm"
+    description: "UCLA-CE"
   NLST:
-    in_uids: "./utils_tmp/csvs/nlst_input.csv"
+    in_uids: "./utils_tmp/filtered_csv/nlst_subsample.csv"
     in_dtype: ".dcm"
     description: "National Lung Screening Trial dataset"
-  UCLA CECT:
-    in_uids: "./utils_tmp/final_csvs_char/ucla_cect_subset.csv"
-    in_dtype: ".dcm"
-    description: "UCLA Contrast Enhanced dataset"
+
+  # NLST:
+  #   in_uids: "./utils_tmp/csvs/nlst_input.csv"
+  #   in_dtype: ".dcm"
+  #   description: "National Lung Screening Trial dataset"
+  # UCLA CECT:
+  #   in_uids: "./utils_tmp/final_csvs_char/ucla_cect_subset.csv"
+  #   in_dtype: ".dcm"
+  #   description: "UCLA Contrast Enhanced dataset"
 
 Modules:
   Characterization: false
@@ -33,20 +50,28 @@ Characterization:
 Harmonization:
   mode: "test"
   input_datasets:
+    - name: SPIE
+    - name: UCLA-LDCT
+    - name: UCLA-CE
     - name: NLST
-      in_uids: "./utils_tmp/csvs/totest_order.csv"
   models:
+    - name: SRResNet
+      pretrained_G: "./pretrained_weights/SRResNet/latestG-1-1.pth"
     - name: SNGAN
       pretrained_G: "./pretrained_weights/SNGAN/latestG-1-1.pth"
+    - name: WGAN
+      pretrained_G: "./pretrained_weights/WGAN/latestG-1-1.pth"
+    - name: BM3D
   param:
     tile_xy: 512
     tile_z: 32
     z_overlap: 4
     gpu_id: 0
-    out_dtype: ".nii.gz"
-  metrics: # sobel, radiomic, snr
-    - snr
-    - sobel
+    out_dtype: ".dcm"
+    save_lr: true
+  # metrics: # sobel, radiomic, snr
+  #   - snr
+  #   - sobel
 
 Robustness:
   input_datasets:

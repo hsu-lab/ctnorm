@@ -169,6 +169,11 @@ def main(config, global_logger, session_path):
                         # Save output
                         helper_func.save_volume(sr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume',
                             f_name='{}--{}'.format(model['name'], data['uid'][0]), meta=None, affine_in=data['affine_info'], target_scale=models_param.get('scale', None))
+                        if models_param.get('save_lr', False):
+                            lr_vol = helper_func.tensor2img(data['dataroot_LR'].detach()[0, 0].float(), out_type=np.int16)
+                            helper_func.save_volume(lr_vol, out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, data['uid'][0]), m_type='Volume',
+                                f_name='{}--{}'.format('Unharmonized', data['uid'][0]), meta=None, affine_in=data['affine_info'], target_scale=None)        
+
                         # Setup paths to read once harmonization is finished running
                         if metrics:
                             if models_param['out_dtype'] == '.dcm':

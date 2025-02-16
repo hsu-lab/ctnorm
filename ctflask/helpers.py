@@ -5,6 +5,8 @@ import plotly.graph_objects as go
 from scipy.stats import entropy, wasserstein_distance
 import pickle
 import matplotlib as mpl
+import plotly.colors as pc
+import plotly.express as px
 
 
 def plot_characterization(session_path, bins=64):
@@ -127,7 +129,7 @@ def plot_characterization(session_path, bins=64):
             fig_kde.add_trace(go.Scatter(
                 x=x_grid, 
                 y=kde_data,
-                mode="lines",
+                fill='tozeroy',
                 name=dataset,
                 line=dict(color=color)
             ))
@@ -221,7 +223,6 @@ def plot_radiomics(avail_feat, feature_names):
     # **Step 2: Generate Scatter Plots for Each Feature**
     for feature in feature_names:
         fig = go.Figure()
-
         for idx, dataset in enumerate(dataset_features):
             if feature in dataset_features[dataset]:
                 fig.add_trace(go.Scatter(
@@ -232,7 +233,6 @@ def plot_radiomics(avail_feat, feature_names):
                     marker=dict(color=f"rgba({idx * 30}, {255 - idx * 40}, {idx * 50}, 0.8)"),
                     marker_color=colors[idx % len(colors)]
                 ))
-
         # Update figure layout
         fig.update_layout(
             title=f"{feature}",
@@ -243,3 +243,82 @@ def plot_radiomics(avail_feat, feature_names):
         # Store the figure in HTML format
         figures[feature] = fig.to_html()
     return figures
+
+
+def generate_tsne_plot(df_tsne, feature_type, color_map):
+    """Generate a Plotly TSNE plot with KDE contours for the given file and feature type."""
+    if df_tsne.empty:
+        return None
+
+    fig = go.Figure()
+    # Add scatter points for each dataset with the color from the shared color_map
+    for dataset, color in color_map.items():
+        subset = df_tsne[df_tsne['Dataset'] == dataset]
+        if not subset.empty:
+            fig.add_trace(go.Scatter(
+                x=subset['TSNE1'],
+                y=subset['TSNE2'],
+                mode='markers',
+                marker=dict(color=color, size=6, opacity=0.7),
+                name=dataset,
+                text=subset['Dataset'],
+                hoverinfo='text+x+y'
+            ))
+
+    # Update layout
+    fig.update_layout(
+        title=f"{feature_type.capitalize()} Features",
+        xaxis_title="t-SNE Component 1",
+        yaxis_title="t-SNE Component 2",
+        xaxis=dict(tickfont=dict(size=14)),
+        yaxis=dict(tickfont=dict(size=14)),
+        legend_title="Dataset",
+        template="plotly_white"
+    )
+    return fig
+
+
+def get_harmonized_metrics(path_to_metric):
+    all_plots = {}
+    all_datasets = set()
+
+    for metric in os.listdir(path_to_metric):
+        if metric == 'tsne':
+            all_plots['tSNE'] = {}
+            model_p = os.path.join(path_to_metric, metric)
+            model_out = os.listdir(model_p)
+
+            # Reorder the metric so "Unharmonized" is first
+            if "Unharmonized" in model_out:
+                model_out.remove("Unharmonized")
+                model_out.insert(0, "Unharmonized")
+
+            for model in model_out:
+                if os.path.isdir(os.path.join(model_p, model)):
+                    model_name = model
+                    intensity_path = os.path.join(model_p, model, 'tsne_intensity.csv')
+                    texture_path = os.path.join(model_p, model, 'tsne_texture.csv')
+
+                    # Read both files only once each and sort by Dataset
+                    df_intensity = pd.read_csv(intensity_path) if os.path.exists(intensity_path) else pd.DataFrame()
+                    df_texture = pd.read_csv(texture_path) if os.path.exists(texture_path) else pd.DataFrame()
+                    # Sort datasets in a consistent manner
+                    if not df_intensity.empty:
+                        df_intensity = df_intensity.sort_values(by='Dataset')
+                        all_datasets.update(df_intensity['Dataset'].unique())
+                    if not df_texture.empty:
+                        df_texture = df_texture.sort_values(by='Dataset')
+                        all_datasets.update(df_texture['Dataset'].unique())
+
+                    # Step 2: Create a shared color map (once per loop iteration)
+                    colors = ['blue', 'green', 'red', 'orange', 'purple', 'cyan', 'magenta', 'yellow']
+                    color_map = {dataset: colors[idx % len(colors)] for idx, dataset in enumerate(sorted(all_datasets))}
+
+                    # Generate plots with the shared color map
+                    intensity_fig = generate_tsne_plot(df_intensity, 'intensity', color_map)
+                    texture_fig = generate_tsne_plot(df_texture, 'texture', color_map)
+                    all_plots['tSNE'][model_name] = {
+                        'intensity': intensity_fig.to_html() if intensity_fig else None,
+                        'texture': texture_fig.to_html() if texture_fig else None
+                    }
+    return all_plots

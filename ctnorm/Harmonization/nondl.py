@@ -59,22 +59,24 @@ def _main(config, logger, cur_sess_pth, model):
                     est_type = models_param.get('noise_type', 'std')
                     if est_type == 'std':
                         sigma = np.std(in_data)
-                        in_data = bm4d(in_data, sigma)
+                        in_data_harmonized = bm4d(in_data, sigma)
                     elif est_type == 'psd':
                         psd = estimate_psd_3d(in_data)
-                        in_data = bm4d(in_data, psd)
+                        in_data_harmonized = bm4d(in_data, psd)
                     else:
                         raise ValueError("Noise type not recognized! Must be 'std' or 'psd'")
 
-                    if models_param['out_dtype'] == 'dcm':
+                    if models_param['out_dtype'] == '.dcm':
                         folder_name = '--'.join(in_uid.lstrip('/').split('/'))
-                        helper_func.save_volume(in_data.astype(np.int16), out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, folder_name), m_type='Volume',
+                        helper_func.save_volume(in_data_harmonized.astype(np.int16), out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, folder_name), m_type='Volume',
                         f_name='{}--{}'.format(model['name'], folder_name), meta=header_in, affine_in=affine_in, target_scale=None)
+                        
+                        if models_param.get('save_lr', False):
+                            helper_func.save_volume(in_data.astype(np.int16), out_type=models_param['out_dtype'], out_dir=os.path.join(out_d, folder_name), m_type='Volume',
+                                f_name='{}--{}'.format('Unharmonized', folder_name), meta=header_in, affine_in=affine_in, target_scale=None)
 
                     elif models_param['out_dtype'] == 'nii' or models_param['out_dtype'] == 'nii.gz':
                         raise NotImplementedError('.nii.gz not yet implemented!')
                     else:
                         raise ValueError('File out type not recognized!')
                 bar()
-
-
