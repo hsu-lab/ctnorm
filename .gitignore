@@ -7,6 +7,7 @@ SESSIONS_Final/
 utils_tmp/
 ctnorm.egg-info/
 write_config.py
+config_work.yaml
 *.sh
 *.pth
 SESSIONS_Char/
