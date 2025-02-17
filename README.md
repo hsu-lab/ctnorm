@@ -112,7 +112,7 @@ Characterization:
 | **manufacturer**        | metadata    | Lists the equipment manufacturers to assess scanner variability. |
 | **all**                 | metadata    | Includes all the above metadata metrics. |
 
-- **🚨 Note:** We plan to expand the available metrics to include **`radiomic`** feature extraction in an upcoming update.
+- **🚨 Note:** We plan to expand the available `metrics` to include **`radiomic`** feature extraction in an upcoming update.
 
 - For **voxel-level** analysis, the following **`params`** can be set:
   - `clip_range`: Sets the intensity value range for voxel-level analysis.  
@@ -176,11 +176,11 @@ param:
 | **`sobel`** *(Sobel Edge Detection)* | Applies a Sobel filter to evaluate edge sharpness, ensuring that anatomical boundaries are preserved. |
 | **`radiomic`** *(Radiomic Feature Analysis)* | Extracts radiomic features to assess intensity, and texture characteristics for image-derived features. |
 
-- **🚨 Note:** We plan to expand the available metrics to include **`tsne`** analysis in an upcoming update.
+- **🚨 Note:** We plan to expand the available `metrics` to include **`tsne`** analysis in an upcoming update.
 
 2️⃣ Want to train your own harmonization model from scratch ? Follow the steps outlined [here](assets/harmonization_train.md).
 
-> We currently have **Sybil** model integrated as part of the robustness analysis module
+> We currently have **Sybil** model integrated as part of the robustness analysis module. It is a deep learning model developed to analyze chest CT scans and predict an individual's risk of developing lung cancer over multiple time horizons, including 1-year, 2-year, and 6-year periods. Read more about it [here.](https://github.com/reginabarzilaygroup/Sybil)
 ```yaml
 Robustness:
   input_datasets:
